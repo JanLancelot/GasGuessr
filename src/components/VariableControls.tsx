@@ -1,0 +1,270 @@
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TextInput } from 'react-native';
+import Slider from '@react-native-community/slider';
+import { colors } from '../theme/colors';
+import { useSimulationStore } from '../store/useSimulationStore';
+
+const geoLabels = ['Very Low', 'Low', 'Medium', 'High', 'Very High'];
+const opecLabels = ['Cut Hard', 'Cut', 'Neutral', 'Boost', 'Boost Hard'];
+
+interface ControlRowProps {
+  icon: string;
+  label: string;
+  valLabel?: string;
+  min: number;
+  max: number;
+  step: number;
+  value: number;
+  onValueChange: (v: number) => void;
+  isNumeric?: boolean;
+  prefix?: string;
+  suffix?: string;
+}
+
+const ControlRow = ({
+  icon,
+  label,
+  valLabel,
+  min,
+  max,
+  step,
+  value,
+  onValueChange,
+  isNumeric = false,
+  prefix = '',
+  suffix = '',
+}: ControlRowProps) => {
+  const [textVal, setTextVal] = useState(
+    Number.isInteger(value) ? value.toString() : value.toFixed(2)
+  );
+
+  useEffect(() => {
+    setTextVal(Number.isInteger(value) ? value.toString() : value.toFixed(2));
+  }, [value]);
+
+  const handleBlur = () => {
+    let parsed = parseFloat(textVal);
+    if (isNaN(parsed)) {
+      setTextVal(Number.isInteger(value) ? value.toString() : value.toFixed(2));
+      return;
+    }
+    parsed = Math.min(Math.max(parsed, min), max);
+    setTextVal(Number.isInteger(parsed) ? parsed.toString() : parsed.toFixed(2));
+    onValueChange(parsed);
+  };
+
+  const pct = ((value - min) / (max - min)) * 100;
+
+  return (
+    <View style={styles.row}>
+      <View style={styles.labelRow}>
+        <View style={styles.labelLeft}>
+          <Text style={styles.labelIcon}>{icon}</Text>
+          <Text style={styles.label}>{label}</Text>
+        </View>
+        <View style={styles.valBadge}>
+          {isNumeric ? (
+            <View style={styles.numericWrap}>
+              {prefix ? <Text style={styles.valText}>{prefix}</Text> : null}
+              <TextInput
+                style={[styles.valText, styles.valInput]}
+                value={textVal}
+                onChangeText={setTextVal}
+                onBlur={handleBlur}
+                keyboardType="decimal-pad"
+                returnKeyType="done"
+              />
+              {suffix ? <Text style={styles.valText}>{suffix}</Text> : null}
+            </View>
+          ) : (
+            <Text style={styles.valText}>{valLabel}</Text>
+          )}
+        </View>
+      </View>
+      <View style={styles.sliderTrackBg}>
+        <View style={[styles.sliderTrackFill, { width: `${pct}%` }]} />
+      </View>
+      <Slider
+        style={styles.slider}
+        minimumValue={min}
+        maximumValue={max}
+        step={step}
+        value={value}
+        onValueChange={onValueChange}
+        minimumTrackTintColor="transparent"
+        maximumTrackTintColor="transparent"
+        thumbTintColor={colors.up}
+      />
+    </View>
+  );
+};
+
+export const VariableControls = () => {
+  const { crude, fx, demand, geo, opec, projWeeks, iter, setVar } =
+    useSimulationStore();
+
+  return (
+    <View style={styles.container}>
+      <ControlRow
+        icon="🛢️"
+        label="Regional Fuel (MOPS)"
+        min={60}
+        max={150}
+        step={1}
+        value={crude}
+        onValueChange={(v) => setVar('crude', v)}
+        isNumeric={true}
+        prefix="$"
+      />
+      <ControlRow
+        icon="💱"
+        label="USD/PHP Rate"
+        min={45}
+        max={75}
+        step={0.25}
+        value={fx}
+        onValueChange={(v) => setVar('fx', v)}
+        isNumeric={true}
+        prefix="₱"
+      />
+      <ControlRow
+        icon="📊"
+        label="Demand Index"
+        min={0.75}
+        max={1.25}
+        step={0.01}
+        value={demand}
+        onValueChange={(v) => setVar('demand', v)}
+        isNumeric={true}
+        suffix="×"
+      />
+      <ControlRow
+        icon="🌍"
+        label="Geopolitical Risk"
+        valLabel={geoLabels[geo]}
+        min={0}
+        max={4}
+        step={1}
+        value={geo}
+        onValueChange={(v) => setVar('geo', v)}
+      />
+      <ControlRow
+        icon="⚙️"
+        label="OPEC Policy"
+        valLabel={opecLabels[opec]}
+        min={0}
+        max={4}
+        step={1}
+        value={opec}
+        onValueChange={(v) => setVar('opec', v)}
+      />
+
+      <View style={styles.divider} />
+
+      <ControlRow
+        icon="📅"
+        label="Forecast Horizon"
+        min={1}
+        max={6}
+        step={1}
+        value={projWeeks}
+        onValueChange={(v) => setVar('projWeeks', v)}
+        isNumeric={true}
+        suffix={` week${projWeeks > 1 ? 's' : ''}`}
+      />
+      <ControlRow
+        icon="🔁"
+        label="Iterations"
+        min={1000}
+        max={50000}
+        step={1000}
+        value={iter}
+        onValueChange={(v) => setVar('iter', v)}
+        isNumeric={true}
+      />
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    gap: 2,
+  },
+  row: {
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingTop: 14,
+    paddingBottom: 4,
+    marginBottom: 8,
+    position: 'relative' as const,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  labelLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  labelIcon: {
+    fontSize: 14,
+  },
+  label: {
+    fontSize: 13,
+    color: colors.text,
+    fontWeight: '500',
+  },
+  valBadge: {
+    backgroundColor: colors.card2,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingVertical: 3,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+  },
+  valText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.text,
+    fontVariant: ['tabular-nums'],
+  },
+  numericWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  valInput: {
+    minWidth: 32,
+    textAlign: 'center',
+    padding: 0,
+    margin: 0,
+  },
+  sliderTrackBg: {
+    height: 3,
+    backgroundColor: colors.border,
+    borderRadius: 2,
+    overflow: 'hidden',
+    marginTop: 6,
+  },
+  sliderTrackFill: {
+    height: '100%',
+    backgroundColor: colors.up + '40',
+    borderRadius: 2,
+  },
+  slider: {
+    width: '100%',
+    height: 36,
+    marginTop: -6,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginVertical: 8,
+    marginHorizontal: 8,
+  },
+});
