@@ -1,15 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import Slider from '@react-native-community/slider';
 import { colors } from '../theme/colors';
 import { useSimulationStore } from '../store/useSimulationStore';
 
-const geoLabels = ['Very Low', 'Low', 'Medium', 'High', 'Very High'];
-const opecLabels = ['Cut Hard', 'Cut', 'Neutral', 'Boost', 'Boost Hard'];
+const geoLabels = {
+  en: ['Stable / Peaceful', 'Low Tension', 'Moderate Risk', 'High Conflict', 'Severe Crisis'],
+  tl: ['Payapa / Matatag', 'Mababang Tensyon', 'Katamtamang Panganib', 'Matinding Gulo', 'Malalang Krisis'],
+};
+const opecLabels = {
+  en: ['Tighten Supply', 'Cut Production', 'Normal / Neutral', 'Boost Supply', 'Flood Market'],
+  tl: ['Higpitan ang Supply', 'Bawasan ang Produksyon', 'Normal / Neutral', 'Dagdagan ang Supply', 'Pabaha ng Supply'],
+};
+
+const descriptions = {
+  mops: { en: "Base imported price", tl: "Presyo ng inangkat na langis" },
+  fx: { en: "Exchange rate", tl: "Palitan ng Dolyar sa Piso" },
+  demand: { en: "Global fuel demand", tl: "Lakas ng konsumo ng langis" },
+  geo: { en: "Global tension & volatility", tl: "Banta ng gulo at gyera" },
+  opec: { en: "Global oil supply controls", tl: "Kontrol sa dami ng supply" },
+  horizon: { en: "Simulation timeframe", tl: "Haba ng panahon" },
+  iter: { en: "Simulation cycles", tl: "Dami ng beses uulitin" },
+};
 
 interface ControlRowProps {
   icon: string;
   label: string;
+  description?: string;
   valLabel?: string;
   min: number;
   max: number;
@@ -24,6 +41,7 @@ interface ControlRowProps {
 const ControlRow = ({
   icon,
   label,
+  description,
   valLabel,
   min,
   max,
@@ -60,7 +78,10 @@ const ControlRow = ({
       <View style={styles.labelRow}>
         <View style={styles.labelLeft}>
           <Text style={styles.labelIcon}>{icon}</Text>
-          <Text style={styles.label}>{label}</Text>
+          <View>
+            <Text style={styles.label}>{label}</Text>
+            {description ? <Text style={styles.description}>{description}</Text> : null}
+          </View>
         </View>
         <View style={styles.valBadge}>
           {isNumeric ? (
@@ -100,7 +121,7 @@ const ControlRow = ({
 };
 
 export const VariableControls = () => {
-  const { crude, fx, demand, geo, opec, projWeeks, iter, setVar } =
+  const { crude, fx, demand, geo, opec, projWeeks, iter, setVar, language, setLanguage } =
     useSimulationStore();
 
   return (
@@ -108,6 +129,7 @@ export const VariableControls = () => {
       <ControlRow
         icon="🛢️"
         label="Regional Fuel (MOPS)"
+        description={descriptions.mops[language]}
         min={60}
         max={150}
         step={1}
@@ -119,6 +141,7 @@ export const VariableControls = () => {
       <ControlRow
         icon="💱"
         label="USD/PHP Rate"
+        description={descriptions.fx[language]}
         min={45}
         max={75}
         step={0.25}
@@ -130,6 +153,7 @@ export const VariableControls = () => {
       <ControlRow
         icon="📊"
         label="Demand Index"
+        description={descriptions.demand[language]}
         min={0.75}
         max={1.25}
         step={0.01}
@@ -141,7 +165,8 @@ export const VariableControls = () => {
       <ControlRow
         icon="🌍"
         label="Geopolitical Risk"
-        valLabel={geoLabels[geo]}
+        description={descriptions.geo[language]}
+        valLabel={geoLabels[language][geo]}
         min={0}
         max={4}
         step={1}
@@ -151,7 +176,8 @@ export const VariableControls = () => {
       <ControlRow
         icon="⚙️"
         label="OPEC Policy"
-        valLabel={opecLabels[opec]}
+        description={descriptions.opec[language]}
+        valLabel={opecLabels[language][opec]}
         min={0}
         max={4}
         step={1}
@@ -164,6 +190,7 @@ export const VariableControls = () => {
       <ControlRow
         icon="📅"
         label="Forecast Horizon"
+        description={descriptions.horizon[language]}
         min={1}
         max={6}
         step={1}
@@ -175,6 +202,7 @@ export const VariableControls = () => {
       <ControlRow
         icon="🔁"
         label="Iterations"
+        description={descriptions.iter[language]}
         min={1000}
         max={50000}
         step={1000}
@@ -219,6 +247,11 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.text,
     fontWeight: '500',
+  },
+  description: {
+    fontSize: 10,
+    color: colors.text + '90',
+    marginTop: 2,
   },
   valBadge: {
     backgroundColor: colors.card2,

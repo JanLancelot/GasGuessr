@@ -44,7 +44,9 @@ export interface SimulationState {
     weeklyP5: number[];
     weeklyP95: number[];
   } | null;
+  language: 'en' | 'tl';
 
+  setLanguage: (lang: 'en' | 'tl') => void;
   setFuel: (val: FuelType) => void;
   setVar: (key: string, val: number | string) => void;
   setHistory: (data: DataRow[], source: DataSource) => void;
@@ -116,7 +118,9 @@ export const useSimulationStore = create<SimulationState>((set, get) => ({
     { type: 'WAIT', msg: 'Awaiting simulation trigger…' },
   ],
   simResults: null,
+  language: 'en',
 
+  setLanguage: (val) => set({ language: val }),
   setFuel: (val) => set({ fuel: val, simResults: null }),
   setVar: (key, val) =>
     set((state) => ({ ...state, [key]: val, simResults: null })),

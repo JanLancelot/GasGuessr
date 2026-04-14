@@ -40,8 +40,30 @@ const createEmptyRow = (): ManualRow => {
 };
 
 export const DataSourceCard = () => {
-  const { history, dataSource, setHistory, calMode, setVar } =
+  const { history, dataSource, setHistory, calMode, setVar, language } =
     useSimulationStore();
+
+  const t = {
+    calMode: { en: 'Calibration Mode', tl: 'Paraan ng Pag-Calibrate' },
+    histGbm: { en: 'Historical (GBM)', tl: 'Batay sa Nakaraan' },
+    formBased: { en: 'Formula-Based', tl: 'Batay sa Pormula' },
+    dataSource: { en: 'Data Source', tl: 'Pinagmulan ng Data' },
+    sample: { en: 'Sample', tl: 'Sample' },
+    manual: { en: 'Manual', tl: 'Mano-mano' },
+    sampleDesc: { en: '24 weeks of actual DOE price adjustments including the crisis period.', tl: '24 linggong totoong data mula sa DOE.' },
+    sampleActive: { en: 'Sample Data Active', tl: 'Ginagamit ang Sample Data' },
+    loadSample: { en: 'Load Sample Data', tl: 'Gamitin ang Sample Data' },
+    manualDesc: { en: 'Enter weekly price data points. At least 2 rows are required.', tl: 'I-type ang lingguhang presyo. Kailangan ng kahit 2 rows.' },
+    week: { en: 'Week', tl: 'Linggo' },
+    gas: { en: 'Gas ₱', tl: 'Gas ₱' },
+    diesel: { en: 'Diesel ₱', tl: 'Krudo ₱' },
+    crude: { en: 'Crude $', tl: 'Langis $' },
+    addRow: { en: 'Add Row', tl: 'Magdagdag' },
+    manualActive: { en: 'Manual Data Active', tl: 'Ginagamit ang Manual na Data' },
+    applyManual: { en: 'Apply Manual Data', tl: 'Gamitin ang Manual na Data' },
+    noData: { en: 'No data loaded', tl: 'Walang data' },
+    clear: { en: 'Clear', tl: 'Burahin' },
+  };
   const [tab, setTab] = useState<'sample' | 'manual'>('sample');
   const [manualRows, setManualRows] = useState<ManualRow[]>([
     createEmptyRow(),
@@ -109,7 +131,7 @@ export const DataSourceCard = () => {
       <View style={styles.card}>
         <View style={styles.cardTitleRow}>
           <Ionicons name="analytics-outline" size={16} color={colors.blue} />
-          <Text style={styles.cardTitle}>Calibration Mode</Text>
+          <Text style={styles.cardTitle}>{t.calMode[language]}</Text>
         </View>
         <View style={styles.modeSwitch}>
           <TouchableOpacity
@@ -132,7 +154,7 @@ export const DataSourceCard = () => {
                 calMode === 'historical' && styles.modeBtnTextActive,
               ]}
             >
-              Historical (GBM)
+              {t.histGbm[language]}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -155,7 +177,7 @@ export const DataSourceCard = () => {
                 calMode === 'formula' && styles.modeBtnTextActive,
               ]}
             >
-              Formula-Based
+              {t.formBased[language]}
             </Text>
           </TouchableOpacity>
         </View>
@@ -166,7 +188,7 @@ export const DataSourceCard = () => {
           <View style={styles.card}>
             <View style={styles.cardTitleRow}>
               <Ionicons name="folder-open-outline" size={16} color={colors.blue} />
-              <Text style={styles.cardTitle}>Data Source</Text>
+              <Text style={styles.cardTitle}>{t.dataSource[language]}</Text>
             </View>
 
             <View style={styles.tabsWrap}>
@@ -178,7 +200,7 @@ export const DataSourceCard = () => {
                 <Text
                   style={[styles.tabText, tab === 'sample' && styles.tabTextActive]}
                 >
-                  Sample
+                  {t.sample[language]}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -189,7 +211,7 @@ export const DataSourceCard = () => {
                 <Text
                   style={[styles.tabText, tab === 'manual' && styles.tabTextActive]}
                 >
-                  Manual
+                  {t.manual[language]}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -197,8 +219,7 @@ export const DataSourceCard = () => {
             {tab === 'sample' && (
               <View style={styles.panel}>
                 <Text style={styles.desc}>
-                  24 weeks of actual DOE price adjustments including the crisis
-                  period.
+                  {t.sampleDesc[language]}
                 </Text>
                 <TouchableOpacity
                   style={[
@@ -225,8 +246,8 @@ export const DataSourceCard = () => {
                     ]}
                   >
                     {dataSource === 'sample'
-                      ? 'Sample Data Active'
-                      : 'Load Sample Data'}
+                      ? t.sampleActive[language]
+                      : t.loadSample[language]}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -235,21 +256,21 @@ export const DataSourceCard = () => {
             {tab === 'manual' && (
               <View style={styles.panel}>
                 <Text style={styles.desc}>
-                  Enter weekly price data points. At least 2 rows are required.
+                  {t.manualDesc[language]}
                 </Text>
 
                 <View style={styles.manualHeaderRow}>
                   <View style={styles.manualLabelCol}>
-                    <Text style={styles.manualHeaderText}>Week</Text>
+                    <Text style={styles.manualHeaderText}>{t.week[language]}</Text>
                   </View>
                   <View style={styles.manualInputCol}>
-                    <Text style={styles.manualHeaderText}>Gas ₱</Text>
+                    <Text style={styles.manualHeaderText}>{t.gas[language]}</Text>
                   </View>
                   <View style={styles.manualInputCol}>
-                    <Text style={styles.manualHeaderText}>Diesel ₱</Text>
+                    <Text style={styles.manualHeaderText}>{t.diesel[language]}</Text>
                   </View>
                   <View style={styles.manualInputCol}>
-                    <Text style={styles.manualHeaderText}>Crude $</Text>
+                    <Text style={styles.manualHeaderText}>{t.crude[language]}</Text>
                   </View>
                   <View style={styles.manualDeleteCol} />
                 </View>
@@ -332,7 +353,7 @@ export const DataSourceCard = () => {
                       color={colors.blue}
                       style={{ marginRight: 4 }}
                     />
-                    <Text style={styles.addRowText}>Add Row</Text>
+                    <Text style={styles.addRowText}>{t.addRow[language]}</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -360,8 +381,8 @@ export const DataSourceCard = () => {
                       ]}
                     >
                       {dataSource === 'manual'
-                        ? 'Manual Data Active'
-                        : 'Apply Manual Data'}
+                        ? t.manualActive[language]
+                        : t.applyManual[language]}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -383,7 +404,7 @@ export const DataSourceCard = () => {
               <Text style={styles.statusText}>
                 {dataSource !== 'none'
                   ? `${history.length} data points · ${dataSource}`
-                  : 'No data loaded'}
+                  : t.noData[language]}
               </Text>
             </View>
             {history.length > 0 && (
@@ -393,7 +414,7 @@ export const DataSourceCard = () => {
                 style={styles.clearBtnWrap}
               >
                 <Ionicons name="trash-outline" size={14} color={colors.up} />
-                <Text style={styles.clearBtn}>Clear</Text>
+                <Text style={styles.clearBtn}>{t.clear[language]}</Text>
               </TouchableOpacity>
             )}
           </View>

@@ -4,7 +4,12 @@ import { colors } from '../theme/colors';
 import { useSimulationStore } from '../store/useSimulationStore';
 
 export const Header = () => {
-  const { fuel, setFuel } = useSimulationStore();
+  const { fuel, setFuel, language, setLanguage } = useSimulationStore();
+
+  const t = {
+    gasoline: { en: 'Gasoline', tl: 'Gasolina' },
+    diesel: { en: 'Diesel', tl: 'Krudo (Diesel)' },
+  };
   const [time, setTime] = useState(
     new Date().toLocaleTimeString('en-PH', { hour12: false })
   );
@@ -50,9 +55,20 @@ export const Header = () => {
           </View>
         </View>
 
-        <View style={styles.liveBadge}>
-          <Animated.View style={[styles.liveDot, { opacity: pulseAnim }]} />
-          <Text style={styles.clockText}>{time}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <TouchableOpacity 
+            style={styles.langSwitch} 
+            onPress={() => setLanguage(language === 'en' ? 'tl' : 'en')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.langSwitchText}>
+              {language === 'en' ? 'TGL' : 'ENG'}
+            </Text>
+          </TouchableOpacity>
+          <View style={styles.liveBadge}>
+            <Animated.View style={[styles.liveDot, { opacity: pulseAnim }]} />
+            <Text style={styles.clockText}>{time}</Text>
+          </View>
         </View>
       </View>
 
@@ -68,7 +84,7 @@ export const Header = () => {
               fuel === 'gasoline' && styles.toggleBtnTextActive,
             ]}
           >
-            ⛽  Gasoline
+            ⛽  {t.gasoline[language]}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -82,7 +98,7 @@ export const Header = () => {
               fuel === 'diesel' && styles.toggleBtnTextActive,
             ]}
           >
-            🛢️  Diesel
+            🛢️  {t.diesel[language]}
           </Text>
         </TouchableOpacity>
       </View>
@@ -148,6 +164,19 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.text2,
     fontVariant: ['tabular-nums'],
+  },
+  langSwitch: {
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  langSwitchText: {
+    color: colors.text2,
+    fontSize: 10,
+    fontWeight: '700',
   },
   fuelToggle: {
     flexDirection: 'row',

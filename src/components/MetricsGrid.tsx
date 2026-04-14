@@ -24,9 +24,23 @@ const MetricCard = ({ accentColor, label, value, sub, subColor }: MetricCardProp
 );
 
 export const MetricsGrid = () => {
-  const { fuel, prices, crude, fx } = useSimulationStore();
+  const { fuel, prices, crude, fx, language } = useSimulationStore();
   const currentPrice = prices[fuel].current;
   const weekChange = prices[fuel].weekChange;
+
+  const t = {
+    currentPrice: { en: 'Current Price/L', tl: 'Kasalukuyang Presyo/L' },
+    thisWk: { en: 'this wk', tl: 'ngayong linggo' },
+    crudeWti: { en: 'Crude Oil (WTI)', tl: 'Crude Oil (WTI)' },
+    linkedHist: { en: '▲ Linked to history', tl: '▲ Batay sa nakaraan' },
+    usdPhp: { en: 'USD / PHP', tl: 'USD / PHP' },
+    globalBase: { en: '▲ Global base', tl: '▲ Global na basehan' },
+    nextDoe: { en: 'Next DOE Review', tl: 'Susunod na DOE Review' },
+    dayAwayText: (d: number, lang: string) => {
+      if (lang === 'tl') return `${d} araw na lang`;
+      return `${d} day${d !== 1 ? 's' : ''} away`;
+    }
+  };
 
   const [daysToDoe, setDaysToDoe] = useState(0);
   const [doeLabel, setDoeLabel] = useState('');
@@ -58,30 +72,30 @@ export const MetricsGrid = () => {
     >
       <MetricCard
         accentColor={colors.up}
-        label="Current Price/L"
+        label={t.currentPrice[language]}
         value={`₱${currentPrice.toFixed(2)}`}
-        sub={`${weekChange >= 0 ? '▲ +' : '▼ '}${weekChange.toFixed(2)} this wk`}
+        sub={`${weekChange >= 0 ? '▲ +' : '▼ '}${weekChange.toFixed(2)} ${t.thisWk[language]}`}
         subColor={weekChange >= 0 ? colors.up : colors.down}
       />
       <MetricCard
         accentColor={colors.neutral}
-        label="Crude Oil (WTI)"
+        label={t.crudeWti[language]}
         value={`$${crude.toFixed(2)}`}
-        sub="▲ Linked to history"
+        sub={t.linkedHist[language]}
         subColor={colors.up}
       />
       <MetricCard
         accentColor={colors.blue}
-        label="USD / PHP"
+        label={t.usdPhp[language]}
         value={`₱${fx.toFixed(2)}`}
-        sub="▲ Global base"
+        sub={t.globalBase[language]}
         subColor={colors.up}
       />
       <MetricCard
         accentColor={colors.down}
-        label="Next DOE Review"
+        label={t.nextDoe[language]}
         value={doeLabel}
-        sub={`${daysToDoe} day${daysToDoe !== 1 ? 's' : ''} away`}
+        sub={t.dayAwayText(daysToDoe, language)}
         subColor={daysToDoe <= 2 ? colors.up : colors.text3}
       />
     </ScrollView>

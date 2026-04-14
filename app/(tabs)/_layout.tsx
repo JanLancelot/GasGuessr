@@ -2,8 +2,10 @@ import { Tabs } from 'expo-router';
 import { colors } from '../../src/theme/colors';
 import { Ionicons } from '@expo/vector-icons';
 import { Platform } from 'react-native';
+import { useSimulationStore } from '../../src/store/useSimulationStore';
 
 export default function TabLayout() {
+  const language = useSimulationStore((s) => s.language);
   return (
     <Tabs
       screenOptions={{
@@ -37,7 +39,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Forecast',
+          title: language === 'en' ? 'Forecast' : 'Pagtaya',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'bar-chart' : 'bar-chart-outline'}
@@ -50,7 +52,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="inputs"
         options={{
-          title: 'Inputs',
+          title: language === 'en' ? 'Inputs' : 'Inputs',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'options' : 'options-outline'}
@@ -63,7 +65,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="data"
         options={{
-          title: 'Data',
+          title: language === 'en' ? 'Data' : 'Data',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons
               name={focused ? 'server' : 'server-outline'}

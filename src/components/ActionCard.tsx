@@ -14,7 +14,22 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 
 export const ActionCard = () => {
-  const { running, simResults, prices, fuel } = useSimulationStore();
+  const { running, simResults, prices, fuel, language } = useSimulationStore();
+
+  const t = {
+    runSimBox: { en: 'Run a Simulation', tl: 'Simulan ang Simulation' },
+    descBox: { en: 'Load data and run the Monte Carlo engine to get price forecasts.', tl: 'Magkasa ng data at simulan ang engine para makita ang forecast.' },
+    refuelNow: { en: 'Refuel Now — Increase Likely', tl: 'Magpakarga Na — Malamang Tumaas' },
+    probIncrease: { en: 'probability of increase', tl: 'na tsansang tumaas' },
+    mean: { en: 'Mean', tl: 'Average' },
+    waitDrop: { en: 'Wait — Price Drop Expected', tl: 'Maghintay — Inaasahang Bababa' },
+    probDrop: { en: 'probability of drop', tl: 'na tsansang bumaba' },
+    monitorUncertain: { en: 'Monitor — Uncertain', tl: 'Obserbahan — Walang Kasiguraduhan' },
+    rise: { en: 'Rise:', tl: 'Taas:' },
+    fall: { en: 'Fall:', tl: 'Baba:' },
+    simulating: { en: 'Simulating…', tl: 'Nagko-compute…' },
+    runSimBtn: { en: 'Run Simulation', tl: 'Patakbuhin (Simulate)' },
+  };
   const [progress, setProgress] = useState(0);
   const [scaleAnim] = useState(new Animated.Value(1));
 
@@ -50,10 +65,10 @@ export const ActionCard = () => {
           </View>
           <View style={styles.recContent}>
             <Text style={[styles.recTitle, { color: colors.neutral }]}>
-              Run a Simulation
+              {t.runSimBox[language]}
             </Text>
             <Text style={styles.recDesc}>
-              Load data and run the Monte Carlo engine to get price forecasts.
+              {t.descBox[language]}
             </Text>
           </View>
         </View>
@@ -71,13 +86,13 @@ export const ActionCard = () => {
           </View>
           <View style={styles.recContent}>
             <Text style={[styles.recTitle, { color: colors.up }]}>
-              Refuel Now — Increase Likely
+              {t.refuelNow[language]}
             </Text>
             <Text style={styles.recDesc}>
               <Text style={styles.recHighlight}>
                 {(pRise * 100).toFixed(1)}%
               </Text>{' '}
-              probability of increase. Mean:{' '}
+              {t.probIncrease[language]}. {t.mean[language]}:{' '}
               <Text style={styles.recHighlight}>₱{mean.toFixed(2)}</Text> (
               {Number(delta) > 0 ? '+' : ''}
               {delta}%).{'\n'}90% CI: ₱{p5.toFixed(2)}–₱{p95.toFixed(2)}.
@@ -93,13 +108,13 @@ export const ActionCard = () => {
           </View>
           <View style={styles.recContent}>
             <Text style={[styles.recTitle, { color: colors.down }]}>
-              Wait — Price Drop Expected
+              {t.waitDrop[language]}
             </Text>
             <Text style={styles.recDesc}>
               <Text style={styles.recHighlight}>
                 {(pFall * 100).toFixed(1)}%
               </Text>{' '}
-              probability of drop. Mean:{' '}
+              {t.probDrop[language]}. {t.mean[language]}:{' '}
               <Text style={styles.recHighlight}>₱{mean.toFixed(2)}</Text> (
               {delta}%).{'\n'}90% CI: ₱{p5.toFixed(2)}–₱{p95.toFixed(2)}.
             </Text>
@@ -114,19 +129,18 @@ export const ActionCard = () => {
           </View>
           <View style={styles.recContent}>
             <Text style={[styles.recTitle, { color: colors.neutral }]}>
-              Monitor — Uncertain
+              {t.monitorUncertain[language]}
             </Text>
             <Text style={styles.recDesc}>
-              Rise:{' '}
+              {t.rise[language]}{' '}
               <Text style={styles.recHighlight}>
                 {(pRise * 100).toFixed(1)}%
               </Text>
-              . Fall:{' '}
+              . {t.fall[language]}{' '}
               <Text style={styles.recHighlight}>
                 {(pFall * 100).toFixed(1)}%
               </Text>
-              .{'\n'}Mean: ₱{mean.toFixed(2)}. CI: ₱{p5.toFixed(2)}–₱
-              {p95.toFixed(2)}.
+              .{'\n'}{t.mean[language]}: ₱{mean.toFixed(2)}. CI: ₱{p5.toFixed(2)}–₱{p95.toFixed(2)}.
             </Text>
           </View>
         </View>
@@ -164,7 +178,7 @@ export const ActionCard = () => {
                   size="small"
                   style={{ marginRight: 10 }}
                 />
-                <Text style={styles.runBtnText}>Simulating…</Text>
+                <Text style={styles.runBtnText}>{t.simulating[language]}</Text>
               </View>
             ) : (
               <View style={styles.runBtnContent}>
@@ -174,7 +188,7 @@ export const ActionCard = () => {
                   color="#fff"
                   style={{ marginRight: 8 }}
                 />
-                <Text style={styles.runBtnText}>Run Simulation</Text>
+                <Text style={styles.runBtnText}>{t.runSimBtn[language]}</Text>
               </View>
             )}
           </LinearGradient>

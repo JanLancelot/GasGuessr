@@ -1,24 +1,40 @@
 import React from 'react';
-import { ScrollView, StyleSheet, View, Text } from 'react-native';
+import { ScrollView, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../src/theme/colors';
 import { VariableControls } from '../../src/components/VariableControls';
+import { useSimulationStore } from '../../src/store/useSimulationStore';
 
 export default function InputsScreen() {
+  const language = useSimulationStore((s) => s.language);
+  const t = {
+    title: { en: 'Market Variables', tl: 'Market Variables' },
+    sub: { en: 'Adjust Monte Carlo simulation inputs', tl: 'Palitan ang mga input ng simulation' },
+  };
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.header}>
         <View style={styles.headerRow}>
-          <View style={styles.headerIconWrap}>
-            <Ionicons name="options" size={18} color={colors.up} />
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
+            <View style={styles.headerIconWrap}>
+              <Ionicons name="options" size={18} color={colors.up} />
+            </View>
+            <View>
+              <Text style={styles.headerTitle}>{t.title[language]}</Text>
+              <Text style={styles.headerSub}>{t.sub[language]}</Text>
+            </View>
           </View>
-          <View>
-            <Text style={styles.headerTitle}>Market Variables</Text>
-            <Text style={styles.headerSub}>
-              Adjust Monte Carlo simulation inputs
+          <TouchableOpacity 
+            style={styles.langSwitch} 
+            onPress={() => useSimulationStore.getState().setLanguage(language === 'en' ? 'tl' : 'en')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.langSwitchText}>
+              {language === 'en' ? 'TGL' : 'ENG'}
             </Text>
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
       <ScrollView
@@ -68,6 +84,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.text2,
     marginTop: 2,
+  },
+  langSwitch: {
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  langSwitchText: {
+    color: colors.text2,
+    fontSize: 10,
+    fontWeight: '700',
   },
   container: {
     flex: 1,

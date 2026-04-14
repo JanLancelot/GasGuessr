@@ -9,7 +9,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 export const SimulationLog = () => {
-  const { simLogs } = useSimulationStore();
+  const { simLogs, language } = useSimulationStore();
   const scrollViewRef = useRef<ScrollView>(null);
   const [expanded, setExpanded] = useState(false);
 
@@ -47,7 +47,7 @@ export const SimulationLog = () => {
       >
         <View style={styles.cardTitleRow}>
           <View style={[styles.dot, { backgroundColor: colors.text3 }]} />
-          <Text style={styles.cardTitle}>Console</Text>
+          <Text style={styles.cardTitle}>{language === 'en' ? 'Console' : 'Console / Log'}</Text>
           <View style={styles.logCountBadge}>
             <Text style={styles.logCountText}>{simLogs.length}</Text>
           </View>

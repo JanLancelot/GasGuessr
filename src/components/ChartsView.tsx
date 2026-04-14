@@ -10,8 +10,19 @@ const CARD_HPAD = 16;
 const Y_AXIS_WIDTH = 50;
 
 export const ChartsView = () => {
-  const { simResults, history, fuel } = useSimulationStore();
+  const { simResults, history, fuel, language } = useSimulationStore();
   const [activeChart, setActiveChart] = useState<'dist' | 'trend'>('dist');
+
+  const t = {
+    dist: { en: 'Distribution', tl: 'Distribusyon' },
+    trend: { en: 'Trend', tl: 'Takbo (Trend)' },
+    priceDist: { en: 'Price Distribution', tl: 'Pamamahagi ng Presyo' },
+    histProj: { en: 'Historical & Projected Trend', tl: 'Nakaraan at Forecast na Takbo' },
+    meanProj: { en: 'Mean Projection', tl: 'Average Forecast' },
+    ciRange: { en: '90% CI Range', tl: '90% Posibleng Sakop' },
+    swipeMore: { en: 'Swipe to see more', tl: 'Mag-swipe para sa iba' },
+    proj: { en: 'Proj', tl: 'FCST' },
+  };
 
   const screenWidth = Dimensions.get('window').width;
   const chartWidth = screenWidth - (CONTAINER_HPAD * 2) - (CARD_HPAD * 2) - Y_AXIS_WIDTH;
@@ -34,7 +45,7 @@ export const ChartsView = () => {
         activeOpacity={0.7}
       >
         <Text style={[styles.tabText, activeChart === 'dist' && styles.tabTextActive]}>
-          Distribution
+          {t.dist[language]}
         </Text>
       </TouchableOpacity>
       <TouchableOpacity
@@ -43,7 +54,7 @@ export const ChartsView = () => {
         activeOpacity={0.7}
       >
         <Text style={[styles.tabText, activeChart === 'trend' && styles.tabTextActive]}>
-          Trend
+          {t.trend[language]}
         </Text>
       </TouchableOpacity>
     </View>
@@ -125,12 +136,12 @@ export const ChartsView = () => {
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
             <Text style={styles.statValue}>₱{mean.toFixed(2)}</Text>
-            <Text style={styles.statLabel}>Mean Projection</Text>
+            <Text style={styles.statLabel}>{t.meanProj[language]}</Text>
           </View>
           <View style={[styles.statDivider]} />
           <View style={styles.statBox}>
             <Text style={styles.statValue}>₱{p5.toFixed(0)}–{p95.toFixed(0)}</Text>
-            <Text style={styles.statLabel}>90% CI Range</Text>
+            <Text style={styles.statLabel}>{t.ciRange[language]}</Text>
           </View>
         </View>
       </View>
@@ -152,7 +163,7 @@ export const ChartsView = () => {
     weeklyMeans.slice(1).forEach((m, idx) => {
       combinedData.push({
         value: m,
-        label: idx === 0 ? 'Proj' : `W+${idx + 1}`,
+        label: idx === 0 ? t.proj[language] : `W+${idx + 1}`,
         dataPointColor: colors.up,
         dataPointRadius: 4,
       });
@@ -199,7 +210,7 @@ export const ChartsView = () => {
         </ScrollView>
         <View style={styles.scrollHint}>
           <Ionicons name="swap-horizontal" size={12} color={colors.text3} style={{ marginRight: 4 }} />
-          <Text style={styles.scrollHintText}>Swipe to see more</Text>
+          <Text style={styles.scrollHintText}>{t.swipeMore[language]}</Text>
         </View>
       </View>
     );
@@ -218,8 +229,8 @@ export const ChartsView = () => {
           />
           <Text style={styles.cardTitle}>
             {activeChart === 'dist'
-              ? 'Price Distribution'
-              : 'Historical & Projected Trend'}
+              ? t.priceDist[language]
+              : t.histProj[language]}
           </Text>
         </View>
         {activeChart === 'dist' ? renderDistChart() : renderTrendChart()}
