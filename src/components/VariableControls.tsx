@@ -5,12 +5,36 @@ import { colors } from '../theme/colors';
 import { useSimulationStore } from '../store/useSimulationStore';
 
 const geoLabels = {
-  en: ['Stable / Peaceful', 'Low Tension', 'Moderate Risk', 'High Conflict', 'Severe Crisis'],
-  tl: ['Payapa / Matatag', 'Mababang Tensyon', 'Katamtamang Panganib', 'Matinding Gulo', 'Malalang Krisis'],
+  en: [
+    '0: Stable (Normal trade; no major regional conflicts)',
+    '1: Low Tension (Diplomatic friction; localized strikes)',
+    '2: Moderate Risk (Regional instability; threats to shipping)',
+    '3: High Conflict (Active war in producer regions; sanctions)',
+    '4: Severe Crisis (Total supply cutoff; energy emergency)',
+  ],
+  tl: [
+    '0: Matatag (Walang gulo; normal ang daloy ng langis)',
+    '1: Mababang Tensyon (May tensyong diplomatiko/protesta)',
+    '2: Katamtamang Panganib (Banta sa mga shipping routes)',
+    '3: Matinding Gulo (Digmaan sa mga producer; sanctions)',
+    '4: Malalang Krisis (Pagkaputol ng supply; emergency)',
+  ],
 };
 const opecLabels = {
-  en: ['Tighten Supply', 'Cut Production', 'Normal / Neutral', 'Boost Supply', 'Flood Market'],
-  tl: ['Higpitan ang Supply', 'Bawasan ang Produksyon', 'Normal / Neutral', 'Dagdagan ang Supply', 'Pabaha ng Supply'],
+  en: [
+    '0: Aggressive Cut (Major supply reduction to spike prices)',
+    '1: Moderate Cut (Small cuts to support price floors)',
+    '2: Neutral (No change; supply matches global demand)',
+    '3: Boost Supply (Increased production to lower prices)',
+    '4: Flood Market (Aggressive price war for market share)',
+  ],
+  tl: [
+    '0: Matinding Bawas (Pagbabawas para mapataas ang presyo)',
+    '1: Katamtamang Bawas (Pagsuporta sa kasalukuyang presyo)',
+    '2: Neutral (Walang bago; sapat ang langis sa mundo)',
+    '3: Dagdag Supply (Pagpapababa sa presyo ng merkado)',
+    '4: Pabaha ng Supply (Price war para sa market share)',
+  ],
 };
 
 const descriptions = {
@@ -73,14 +97,26 @@ const ControlRow = ({
 
   const pct = ((value - min) / (max - min)) * 100;
 
+  let mainValLabel = valLabel;
+  let subValLabel = '';
+
+  if (!isNumeric && valLabel && valLabel.includes('(')) {
+    const parts = valLabel.split('(');
+    mainValLabel = parts[0].trim();
+    subValLabel = parts[1].replace(')', '').trim();
+  }
+
   return (
     <View style={styles.row}>
       <View style={styles.labelRow}>
         <View style={styles.labelLeft}>
           <Text style={styles.labelIcon}>{icon}</Text>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={styles.label}>{label}</Text>
             {description ? <Text style={styles.description}>{description}</Text> : null}
+            {subValLabel ? (
+              <Text style={styles.subValText}>{subValLabel}</Text>
+            ) : null}
           </View>
         </View>
         <View style={styles.valBadge}>
@@ -98,7 +134,7 @@ const ControlRow = ({
               {suffix ? <Text style={styles.valText}>{suffix}</Text> : null}
             </View>
           ) : (
-            <Text style={styles.valText}>{valLabel}</Text>
+            <Text style={styles.valText}>{mainValLabel}</Text>
           )}
         </View>
       </View>
@@ -239,6 +275,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flex: 1,
   },
   labelIcon: {
     fontSize: 14,
@@ -253,13 +290,20 @@ const styles = StyleSheet.create({
     color: colors.text + '90',
     marginTop: 2,
   },
+  subValText: {
+    fontSize: 10,
+    color: colors.up,
+    marginTop: 3,
+    fontWeight: '500',
+  },
   valBadge: {
     backgroundColor: colors.card2,
     borderWidth: 1,
     borderColor: colors.border,
     paddingVertical: 3,
-    paddingHorizontal: 10,
+    paddingHorizontal: 8,
     borderRadius: 8,
+    maxWidth: '65%',
   },
   valText: {
     fontSize: 12,

@@ -1,8 +1,8 @@
 import { useSimulationStore, DataRow, SimulationState } from '../store/useSimulationStore';
 
 const opecMod = [+2.5, +1.0, 0, -1.0, -2.5];
-const geoLabels = ['Very Low', 'Low', 'Medium', 'High', 'Very High'];
-const opecLabels = ['Cut Hard', 'Cut', 'Neutral', 'Boost', 'Boost Hard'];
+const geoLabels = ['Stable (0)', 'Low Tension (1)', 'Moderate Risk (2)', 'High Conflict (3)', 'Severe Crisis (4)'];
+const opecLabels = ['Aggressive Cut (0)', 'Moderate Cut (1)', 'Neutral (2)', 'Boost Supply (3)', 'Flood Market (4)'];
 
 function randn(): number {
   let u = 0,
