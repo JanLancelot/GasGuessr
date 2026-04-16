@@ -1,11 +1,20 @@
-import { Tabs } from 'expo-router';
-import { colors } from '../../src/theme/colors';
 import { Ionicons } from '@expo/vector-icons';
+import { Tabs } from 'expo-router';
+import React, { useState } from 'react';
 import { Platform } from 'react-native';
+import Onboarding from '../../components/Onboarding/Onboarding';
 import { useSimulationStore } from '../../src/store/useSimulationStore';
+import { colors } from '../../src/theme/colors';
 
 export default function TabLayout() {
+
+  const [showTutorial, setShowTutorial] = useState(true);
   const language = useSimulationStore((s) => s.language);
+
+ if (showTutorial) {
+    return <Onboarding onComplete={() => setShowTutorial(false)} />;
+  }
+
   return (
     <Tabs
       screenOptions={{
