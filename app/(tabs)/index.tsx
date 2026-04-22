@@ -1,7 +1,7 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import React from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActionCard } from '../../src/components/ActionCard';
 import { ChartsView } from '../../src/components/ChartsView';
@@ -17,44 +17,62 @@ export default function ForecastScreen() {
   const handleExport = async () => {
     try {
       if (!simResults) {
-        Alert.alert("No Data", "simResults is null — simulation may not have run.");
+        if (Platform.OS === 'web') {
+          alert("No Data: Simulation may not have run.");
+        } else {
+          Alert.alert("No Data", "Run a simulation first.");
+        }
         return;
       }
-
-      Alert.alert("Debug", `Mean: ${simResults.mean}, P5: ${simResults.p5}`);
 
       const currentPrice = prices[fuel].current;
       const { mean, sd, p5, p95, pRise, pFall, pStable } = simResults;
 
-      const csvData = [
+      const csvContent = [
         "Metric,Value",
         `Fuel Type,${fuel}`,
-        `Current Price,₱${currentPrice.toFixed(2)}`,
-        `Mean Projection,₱${mean.toFixed(2)}`,
+        `Current Price,${currentPrice.toFixed(2)}`,
+        `Mean Projection,${mean.toFixed(2)}`,
         `Std Deviation,${sd.toFixed(4)}`,
-        `5th Percentile (P5),₱${p5.toFixed(2)}`,
-        `95th Percentile (P95),₱${p95.toFixed(2)}`,
+        `5th Percentile (P5),${p5.toFixed(2)}`,
+        `95th Percentile (P95),${p95.toFixed(2)}`,
         `Probability of Rise,${(pRise * 100).toFixed(1)}%`,
         `Probability of Fall,${(pFall * 100).toFixed(1)}%`,
         `Probability of Stable,${(pStable * 100).toFixed(1)}%`,
       ].join("\n");
 
-      const folder = (FileSystem as any).documentDirectory;
-      Alert.alert("Folder", `Path: ${folder}`);
+      if (Platform.OS === 'web') {
+        // --- WEB EXPORT ---
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `GasGuessr_${fuel}_Results.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } else {
+  const fileUri = `${FileSystem.cacheDirectory}GasGuessr_${fuel}_Results.csv`;
 
-      const fileUri = folder + "GasGuessr_Results.csv";
-      await (FileSystem as any).writeAsStringAsync(fileUri, csvData);
+  await FileSystem.writeAsStringAsync(fileUri, csvContent, {
+    encoding: 'utf8',
+  });
 
-      const canShare = await Sharing.isAvailableAsync();
-      if (!canShare) {
-        Alert.alert("Error", "Sharing is not available on this device.");
-        return;
-      }
+  const canShare = await Sharing.isAvailableAsync();
+  if (!canShare) {
+    Alert.alert("Error", "Sharing is not available on this device.");
+    return;
+  }
 
-      await Sharing.shareAsync(fileUri);
+  await Sharing.shareAsync(fileUri, {
+    mimeType: 'text/csv',
+    dialogTitle: 'Export GasGuessr Results',
+    UTI: 'public.comma-separated-values-text',
+  });
+}
     } catch (e) {
-      Alert.alert("Exception", String(e));
-      console.log("Error sharing", e);
+      Alert.alert("Export Failed", String(e));
     }
   };
 
@@ -80,7 +98,6 @@ export default function ForecastScreen() {
             <Text style={styles.btnText}>EXPORT RESULTS TO CSV</Text>
           </TouchableOpacity>
         )}
-
       </ScrollView>
     </SafeAreaView>
   );
@@ -96,6 +113,13 @@ const styles = StyleSheet.create({
     margin: 16,
     borderRadius: 8,
     alignItems: 'center',
+    ...Platform.select({
+      web: {
+        maxWidth: 400,
+        alignSelf: 'center',
+        width: '90%',
+      }
+    })
   },
   btnText: { color: 'white', fontWeight: 'bold' },
 });

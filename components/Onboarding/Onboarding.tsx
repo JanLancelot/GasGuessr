@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useRef, useState } from 'react';
-import { Animated, FlatList, StyleSheet, Text, TouchableOpacity, View, ViewToken } from 'react-native';
-
+import React, { useState } from 'react';
+import {Animated, StyleSheet, Text,TouchableOpacity, View, useWindowDimensions, Platform} from 'react-native';
 import OnboardingItem from './OnboardingItem';
 import Paginator from './Paginator';
 import slides from './slides';
@@ -12,55 +11,37 @@ interface OnboardingProps {
 
 export default function Onboarding({ onComplete }: OnboardingProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const scrollX = useRef(new Animated.Value(0)).current;
-  const slidesRef = useRef<FlatList>(null);
+  const scrollX = React.useRef(new Animated.Value(0)).current;
+  const { width } = useWindowDimensions();
 
-  const viewableItemsChanged = useRef(({ viewableItems }: { viewableItems: ViewToken[] }) => {
-    if (viewableItems && viewableItems.length > 0) {
-      setCurrentIndex(viewableItems[0].index ?? 0);
-    }
-  }).current;
-
-  const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
-
-  
-  const scrollTo = (direction: 'next' | 'prev') => {
-    if (direction === 'next' && currentIndex < slides.length - 1) {
-      slidesRef.current?.scrollToIndex({ index: currentIndex + 1 });
-    } else if (direction === 'prev' && currentIndex > 0) {
-      slidesRef.current?.scrollToIndex({ index: currentIndex - 1 });
-    }
+  const goTo = (index: number) => {
+    if (index < 0 || index >= slides.length) return;
+    setCurrentIndex(index);
+    // Update scrollX manually for paginator dots
+    Animated.timing(scrollX, {
+      toValue: index * width,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
   };
 
   return (
     <View style={styles.container}>
-      <View style={{ flex: 3 }}>
-        <FlatList
-          data={slides}
-          renderItem={({ item }) => <OnboardingItem item={item} />}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          pagingEnabled
-          bounces={false}
-          keyExtractor={(item) => item.id}
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-            { useNativeDriver: false } 
-          )}
-          scrollEventThrottle={32}
-          onViewableItemsChanged={viewableItemsChanged}
-          viewabilityConfig={viewConfig}
-          ref={slidesRef}
-        />
+      {/* Skip button */}
+      <TouchableOpacity style={styles.skipBtn} onPress={onComplete}>
+        <Text style={styles.skipText}>Skip</Text>
+      </TouchableOpacity>
+
+      {/* Slide content — just show current slide, no FlatList */}
+      <View style={styles.slidesContainer}>
+        <OnboardingItem item={slides[currentIndex]} />
       </View>
 
-     
+      {/* Footer */}
       <View style={styles.footer}>
-        
-      
-        <TouchableOpacity 
-          onPress={() => scrollTo('prev')} 
-          style={[styles.arrowButton, { opacity: currentIndex === 0 ? 0 : 1 }]} 
+        <TouchableOpacity
+          onPress={() => goTo(currentIndex - 1)}
+          style={[styles.arrowButton, { opacity: currentIndex === 0 ? 0.2 : 1 }]}
           disabled={currentIndex === 0}
         >
           <Ionicons name="chevron-back" size={28} color="#F97316" />
@@ -73,11 +54,13 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             <Text style={styles.startButtonText}>Start</Text>
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity onPress={() => scrollTo('next')} style={styles.arrowButton}>
+          <TouchableOpacity
+            onPress={() => goTo(currentIndex + 1)}
+            style={styles.arrowButton}
+          >
             <Ionicons name="chevron-forward" size={28} color="#F97316" />
           </TouchableOpacity>
         )}
-
       </View>
     </View>
   );
@@ -86,32 +69,56 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#DBEAFE',
     justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff', 
+  },
+  skipBtn: {
+    position: 'absolute',
+    top: 52,
+    right: 24,
+    zIndex: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: 'rgba(249,115,22,0.1)',
+  },
+  skipText: {
+    color: '#F97316',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  slidesContainer: {
+    flex: 1,
+    maxHeight: 500,
+    justifyContent: 'center',
   },
   footer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
-    width: '100%',
-    paddingHorizontal: 30,
-    paddingBottom: 40, 
+    gap: 24,
+    paddingVertical: 32,
+    paddingBottom: Platform.OS === 'web' ? 48 : 50,
   },
   arrowButton: {
-    padding: 10,
-    borderRadius: 25,
-    backgroundColor: 'rgba(249, 115, 22, 0.1)', 
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(249, 115, 22, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   startButton: {
     backgroundColor: '#F97316',
     paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingHorizontal: 28,
     borderRadius: 25,
+    minWidth: 80,
+    alignItems: 'center',
   },
   startButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
-  }
+  },
 });

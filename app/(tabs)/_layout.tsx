@@ -1,18 +1,50 @@
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Tabs } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import Onboarding from '../../components/Onboarding/Onboarding';
 import { useSimulationStore } from '../../src/store/useSimulationStore';
 import { colors } from '../../src/theme/colors';
 
-export default function TabLayout() {
+const ONBOARDING_KEY = 'gasguessr_onboarding_done';
 
+export default function TabLayout() {
   const [showTutorial, setShowTutorial] = useState(true);
+  const [checked, setChecked] = useState(false);
   const language = useSimulationStore((s) => s.language);
 
- if (showTutorial) {
-    return <Onboarding onComplete={() => setShowTutorial(false)} />;
+  useEffect(() => {
+    const checkOnboarding = async () => {
+      if (Platform.OS === 'web') {
+        // Use localStorage on web
+        const done = localStorage.getItem(ONBOARDING_KEY);
+        if (!done) setShowTutorial(true);
+        setChecked(true);
+      } else {
+        // Use AsyncStorage on mobile
+        const done = await AsyncStorage.getItem(ONBOARDING_KEY);
+        if (!done) setShowTutorial(true);
+        setChecked(true);
+      }
+    };
+    checkOnboarding();
+  }, []);
+
+  const handleOnboardingComplete = async () => {
+    if (Platform.OS === 'web') {
+      localStorage.setItem(ONBOARDING_KEY, 'true');
+    } else {
+      await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+    }
+    setShowTutorial(false);
+  };
+
+  // Prevent flicker while checking storage
+  if (!checked) return null;
+
+  if (showTutorial) {
+    return <Onboarding onComplete={handleOnboardingComplete} />;
   }
 
   return (
@@ -40,9 +72,7 @@ export default function TabLayout() {
           letterSpacing: 0.3,
           marginTop: 2,
         },
-        tabBarIconStyle: {
-          marginBottom: -2,
-        },
+        tabBarIconStyle: { marginBottom: -2 },
       }}
     >
       <Tabs.Screen
@@ -50,11 +80,7 @@ export default function TabLayout() {
         options={{
           title: language === 'en' ? 'Forecast' : 'Pagtaya',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? 'bar-chart' : 'bar-chart-outline'}
-              size={22}
-              color={color}
-            />
+            <Ionicons name={focused ? 'bar-chart' : 'bar-chart-outline'} size={22} color={color} />
           ),
         }}
       />
@@ -63,11 +89,7 @@ export default function TabLayout() {
         options={{
           title: language === 'en' ? 'Inputs' : 'Inputs',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? 'options' : 'options-outline'}
-              size={22}
-              color={color}
-            />
+            <Ionicons name={focused ? 'options' : 'options-outline'} size={22} color={color} />
           ),
         }}
       />
@@ -76,11 +98,7 @@ export default function TabLayout() {
         options={{
           title: language === 'en' ? 'Data' : 'Data',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? 'server' : 'server-outline'}
-              size={22}
-              color={color}
-            />
+            <Ionicons name={focused ? 'server' : 'server-outline'} size={22} color={color} />
           ),
         }}
       />
