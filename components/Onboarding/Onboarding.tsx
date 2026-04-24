@@ -44,7 +44,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           style={[styles.arrowButton, { opacity: currentIndex === 0 ? 0.2 : 1 }]}
           disabled={currentIndex === 0}
         >
-          <Ionicons name="chevron-back" size={28} color="#F97316" />
+          <Ionicons name="chevron-back" size={28} color="#ff5722" />
         </TouchableOpacity>
 
         <Paginator data={slides} scrollX={scrollX} />
@@ -58,7 +58,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
             onPress={() => goTo(currentIndex + 1)}
             style={styles.arrowButton}
           >
-            <Ionicons name="chevron-forward" size={28} color="#F97316" />
+            <Ionicons name="chevron-forward" size={28} color="#ff5722" />
           </TouchableOpacity>
         )}
       </View>
@@ -69,24 +69,24 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#DBEAFE',
+    backgroundColor: '#0f0f1a',
     justifyContent: 'center',
   },
   skipBtn: {
-    position: 'absolute',
-    top: 52,
-    right: 24,
-    zIndex: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: 'rgba(249,115,22,0.1)',
-  },
+  position: 'absolute',
+  top: 52,
+  right: 24,
+  zIndex: 10,
+  paddingHorizontal: 14,
+  paddingVertical: 7,
+  borderRadius: 20,
+  backgroundColor: 'rgba(255, 87, 34, 0.15)', 
+},
   skipText: {
-    color: '#F97316',
-    fontSize: 13,
-    fontWeight: '600',
-  },
+  color: '#ff5722',  
+  fontSize: 13,
+  fontWeight: '600',
+},
   slidesContainer: {
     flex: 1,
     maxHeight: 500,
@@ -101,21 +101,21 @@ const styles = StyleSheet.create({
     paddingBottom: Platform.OS === 'web' ? 48 : 50,
   },
   arrowButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(249, 115, 22, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  width: 48,
+  height: 48,
+  borderRadius: 24,
+  backgroundColor: 'rgba(255, 87, 34, 0.15)',
+  alignItems: 'center',
+  justifyContent: 'center',
+},
   startButton: {
-    backgroundColor: '#F97316',
-    paddingVertical: 12,
-    paddingHorizontal: 28,
-    borderRadius: 25,
-    minWidth: 80,
-    alignItems: 'center',
-  },
+  backgroundColor: '#ff5722',  
+  paddingVertical: 12,
+  paddingHorizontal: 28,
+  borderRadius: 25,
+  minWidth: 80,
+  alignItems: 'center',
+},
   startButtonText: {
     color: 'white',
     fontSize: 16,

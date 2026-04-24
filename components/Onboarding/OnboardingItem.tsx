@@ -35,14 +35,15 @@ export default function OnboardingItem({ item }: OnboardingItemProps) {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
+  flex: 1,
+  alignItems: 'center',
+  justifyContent: 'center',
+  paddingHorizontal: 24,
+  backgroundColor: '#0f0f1a',  
+},
   imageWrapper: {
-    borderRadius: 24,        // ← rounded corners here
-    overflow: 'hidden',      // ← clips the image inside
+    borderRadius: 24,       
+    overflow: 'hidden',     
     marginBottom: 28,
     backgroundColor: 'transparent',
   },
@@ -56,18 +57,18 @@ const styles = StyleSheet.create({
     maxWidth: 520,
   },
   title: {
-    fontWeight: '800',
-    fontSize: 28,
-    marginBottom: 12,
-    color: '#493d8a',
-    textAlign: 'center',
-  },
+  fontWeight: '800',
+  fontSize: 28,
+  marginBottom: 12,
+  color: '#ffffff',      
+  textAlign: 'center',
+},
   description: {
-    fontWeight: '300',
-    color: '#62656b',
-    textAlign: 'center',
-    fontSize: 15,
-    lineHeight: 22,
-    paddingHorizontal: 16,
-  },
+  fontWeight: '300',
+  color: '#a0a0b0',       
+  textAlign: 'center',
+  fontSize: 15,
+  lineHeight: 22,
+  paddingHorizontal: 16,
+},
 });
