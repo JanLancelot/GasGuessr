@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,11 +7,11 @@ import {
   TextInput,
   Alert,
   ScrollView,
-  KeyboardAvoidingView,
   Platform,
   UIManager,
+  Animated,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { colors } from '../theme/colors';
 import { useSimulationStore, SAMPLE_DATA, DataRow } from '../store/useSimulationStore';
 
@@ -29,8 +29,9 @@ interface ManualRow {
   c: string;
 }
 
-const createEmptyRow = (): ManualRow => {
+const createEmptyRow = (offset = 0): ManualRow => {
   const dt = new Date();
+  dt.setDate(dt.getDate() - offset * 7);
   return {
     label: dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
     g: '',
@@ -39,350 +40,293 @@ const createEmptyRow = (): ManualRow => {
   };
 };
 
+/* ── Tiny section header ── */
+const SectionLabel = ({ icon, title, subtitle }: { icon: string; title: string; subtitle?: string }) => (
+  <View style={s.sectionLabel}>
+    <Ionicons name={icon as any} size={15} color={colors.blue} />
+    <View style={{ flex: 1 }}>
+      <Text style={s.sectionTitle}>{title}</Text>
+      {subtitle ? <Text style={s.sectionSub}>{subtitle}</Text> : null}
+    </View>
+  </View>
+);
+
+/* ── Data preview row ── */
+const PreviewRow = ({ row, index, isLast }: { row: DataRow; index: number; isLast: boolean }) => (
+  <View style={[s.prevRow, isLast && { borderBottomWidth: 0 }]}>
+    <Text style={[s.prevCell, { flex: 1.3, color: colors.text2 }]}>{row.label}</Text>
+    <Text style={[s.prevCell, { flex: 1 }]}>₱{row.g.toFixed(1)}</Text>
+    <Text style={[s.prevCell, { flex: 1 }]}>₱{row.d.toFixed(1)}</Text>
+    <Text style={[s.prevCell, { flex: 1 }]}>${row.c.toFixed(1)}</Text>
+  </View>
+);
+
+/* ════════════════════════════════════════════ */
 export const DataSourceCard = () => {
-  const { history, dataSource, setHistory, calMode, setVar, language } =
+  const { history, dataSource, setHistory, calMode, setVar, language, interactionMode } =
     useSimulationStore();
+  const isFixed = interactionMode === 'fixed';
 
   const t = {
-    calMode: { en: 'Calibration Mode', tl: 'Paraan ng Pag-Calibrate' },
-    histGbm: { en: 'Historical (GBM)', tl: 'Batay sa Nakaraan' },
+    step1: { en: 'Step 1 — Simulation Method', tl: 'Hakbang 1 — Paraan ng Simulation' },
+    step1sub: { en: 'How should the engine compute forecasts?', tl: 'Paano mag-compute ng forecast?' },
+    histGbm: { en: 'Past Trends (GBM)', tl: 'Batay sa Nakaraan' },
+    histDesc: { en: 'Uses historical price patterns to model future movement', tl: 'Ginagamit ang dating pattern ng presyo' },
     formBased: { en: 'Formula-Based', tl: 'Batay sa Pormula' },
-    dataSource: { en: 'Data Source', tl: 'Pinagmulan ng Data' },
-    sample: { en: 'Sample', tl: 'Sample' },
-    manual: { en: 'Manual', tl: 'Mano-mano' },
-    sampleDesc: { en: '24 weeks of actual DOE price adjustments including the crisis period.', tl: '24 linggong totoong data mula sa DOE.' },
-    sampleActive: { en: 'Sample Data Active', tl: 'Ginagamit ang Sample Data' },
-    loadSample: { en: 'Load Sample Data', tl: 'Gamitin ang Sample Data' },
-    manualDesc: { en: 'Enter weekly price data points. At least 2 rows are required.', tl: 'I-type ang lingguhang presyo. Kailangan ng kahit 2 rows.' },
+    formDesc: { en: 'Computes price from crude, FX, tax & margins directly', tl: 'Kinakalkula mula sa krudo, palitan, at buwis' },
+    step2: { en: 'Step 2 — Load Price Data', tl: 'Hakbang 2 — I-load ang Data' },
+    step2sub: { en: 'Historical data drives the trend analysis', tl: 'Kailangan ng historical data para sa analysis' },
+    preset: { en: 'Use DOE Preset', tl: 'Gamitin ang DOE Data' },
+    presetDesc: { en: '24 weeks of real Philippine fuel prices from DOE', tl: '24 na linggo ng totoong presyo mula sa DOE' },
+    custom: { en: 'Enter Custom Data', tl: 'Mag-input ng Sarili' },
+    customDesc: { en: 'Type your own weekly price data (min. 3 rows)', tl: 'Mag-type ng sariling datos (min. 3 rows)' },
     week: { en: 'Week', tl: 'Linggo' },
     gas: { en: 'Gas ₱', tl: 'Gas ₱' },
-    diesel: { en: 'Diesel ₱', tl: 'Krudo ₱' },
-    crude: { en: 'Crude $', tl: 'Langis $' },
-    addRow: { en: 'Add Row', tl: 'Magdagdag' },
-    manualActive: { en: 'Manual Data Active', tl: 'Ginagamit ang Manual na Data' },
-    applyManual: { en: 'Apply Manual Data', tl: 'Gamitin ang Manual na Data' },
-    noData: { en: 'No data loaded', tl: 'Walang data' },
-    clear: { en: 'Clear', tl: 'Burahin' },
+    diesel: { en: 'Diesel ₱', tl: 'Diesel ₱' },
+    crude: { en: 'Crude $', tl: 'Krudo $' },
+    addRow: { en: '+ Add Week', tl: '+ Magdagdag' },
+    apply: { en: 'Apply Data', tl: 'Gamitin ang Data' },
+    applied: { en: 'Data Applied ✓', tl: 'Na-apply na ✓' },
+    preview: { en: 'Loaded Data Preview', tl: 'Preview ng Na-load na Data' },
+    points: { en: 'data points', tl: 'datos' },
+    noData: { en: 'No data loaded yet', tl: 'Wala pang data' },
+    clear: { en: 'Clear All', tl: 'Burahin Lahat' },
+    locked: { en: 'Data source is locked in Fixed Mode', tl: 'Naka-lock ang data sa Fixed Mode' },
+    showAll: { en: 'Show all', tl: 'Ipakita lahat' },
+    showLess: { en: 'Show less', tl: 'Bawasan' },
+    notNeeded: { en: 'Formula mode doesn\'t need historical data — inputs are on the Variables tab.', tl: 'Hindi kailangan ng historical data sa Formula mode.' },
   };
-  const [tab, setTab] = useState<'sample' | 'manual'>('sample');
-  const [manualRows, setManualRows] = useState<ManualRow[]>([
-    createEmptyRow(),
-    createEmptyRow(),
-    createEmptyRow(),
-  ]);
 
-  const updateManualRow = (index: number, field: keyof ManualRow, value: string) => {
+  const [mode, setMode] = useState<'preset' | 'custom'>(dataSource === 'manual' ? 'custom' : 'preset');
+  const [manualRows, setManualRows] = useState<ManualRow[]>([
+    createEmptyRow(2), createEmptyRow(1), createEmptyRow(0),
+  ]);
+  const [showAllPreview, setShowAllPreview] = useState(false);
+
+  const updateManualRow = (i: number, field: keyof ManualRow, value: string) => {
     setManualRows((prev) => {
-      const updated = [...prev];
-      updated[index] = { ...updated[index], [field]: value };
-      return updated;
+      const u = [...prev];
+      u[i] = { ...u[i], [field]: value };
+      return u;
     });
   };
-
-  const addManualRow = () => {
-    setManualRows((prev) => [...prev, createEmptyRow()]);
+  const removeManualRow = (i: number) => {
+    if (manualRows.length <= 3) return;
+    setManualRows((p) => p.filter((_, idx) => idx !== i));
   };
-
-  const removeManualRow = (index: number) => {
-    if (manualRows.length <= 1) return;
-    setManualRows((prev) => prev.filter((_, i) => i !== index));
-  };
+  const addManualRow = () => setManualRows((p) => [...p, createEmptyRow()]);
 
   const applyManualData = () => {
-    const validRows: DataRow[] = [];
+    const valid: DataRow[] = [];
     for (let i = 0; i < manualRows.length; i++) {
-      const row = manualRows[i];
-      const g = parseFloat(row.g);
-      const d = parseFloat(row.d);
-      const c = parseFloat(row.c);
+      const r = manualRows[i];
+      const g = parseFloat(r.g), d = parseFloat(r.d), c = parseFloat(r.c);
       if (isNaN(g) || isNaN(d) || isNaN(c)) {
-        Alert.alert(
-          'Invalid Entry',
-          `Row ${i + 1} has invalid values. All fields must be numbers.`,
-          [{ text: 'OK' }]
-        );
+        Alert.alert('Invalid', `Row ${i + 1} has invalid values.`);
         return;
       }
       if (g <= 0 || d <= 0 || c <= 0) {
-        Alert.alert(
-          'Invalid Entry',
-          `Row ${i + 1} must have positive values.`,
-          [{ text: 'OK' }]
-        );
+        Alert.alert('Invalid', `Row ${i + 1} must be positive.`);
         return;
       }
-      validRows.push({ label: row.label || `Wk ${i + 1}`, g, d, c });
+      valid.push({ label: r.label || `Wk ${i + 1}`, g, d, c });
     }
-
-    if (validRows.length < 2) {
-      Alert.alert(
-        'Not Enough Data',
-        'At least 2 data points are required for simulation.',
-        [{ text: 'OK' }]
-      );
+    if (valid.length < 3) {
+      Alert.alert('Need More Data', 'At least 3 rows required.');
       return;
     }
-
-    setHistory(validRows, 'manual');
+    setHistory(valid, 'manual');
   };
 
+  /* ── Preview data (show last 5 or all) ── */
+  const previewData = showAllPreview ? history : history.slice(-5);
+
   return (
-    <View style={styles.container}>
-      <View style={styles.card}>
-        <View style={styles.cardTitleRow}>
-          <Ionicons name="analytics-outline" size={16} color={colors.blue} />
-          <Text style={styles.cardTitle}>{t.calMode[language]}</Text>
+    <View style={s.container}>
+      {/* Fixed-mode banner */}
+      {isFixed && (
+        <View style={s.lockedBanner}>
+          <Ionicons name="lock-closed" size={16} color={colors.blue} />
+          <Text style={s.lockedText}>{t.locked[language]}</Text>
         </View>
-        <View style={styles.modeSwitch}>
+      )}
+
+      {/* ─── STEP 1: Simulation Method ─── */}
+      <View style={[s.card, isFixed && s.dimmed]} pointerEvents={isFixed ? 'none' : 'auto'}>
+        <SectionLabel icon="analytics-outline" title={t.step1[language]} subtitle={t.step1sub[language]} />
+        <View style={s.optionRow}>
           <TouchableOpacity
-            style={[
-              styles.modeBtn,
-              calMode === 'historical' && styles.modeBtnActive,
-            ]}
+            style={[s.optionCard, calMode === 'historical' && s.optionCardActive]}
             onPress={() => setVar('calMode', 'historical')}
             activeOpacity={0.7}
           >
-            <Ionicons
-              name="trending-up"
-              size={16}
-              color={calMode === 'historical' ? colors.blue : colors.text3}
-              style={{ marginBottom: 4 }}
-            />
-            <Text
-              style={[
-                styles.modeBtnText,
-                calMode === 'historical' && styles.modeBtnTextActive,
-              ]}
-            >
+            <Ionicons name="trending-up" size={22} color={calMode === 'historical' ? colors.blue : colors.text3} />
+            <Text style={[s.optionTitle, calMode === 'historical' && s.optionTitleActive]}>
               {t.histGbm[language]}
             </Text>
+            <Text style={s.optionDesc}>{t.histDesc[language]}</Text>
+            {calMode === 'historical' && (
+              <View style={s.checkBadge}>
+                <Ionicons name="checkmark" size={12} color="#fff" />
+              </View>
+            )}
           </TouchableOpacity>
           <TouchableOpacity
-            style={[
-              styles.modeBtn,
-              calMode === 'formula' && styles.modeBtnActive,
-            ]}
+            style={[s.optionCard, calMode === 'formula' && s.optionCardActive]}
             onPress={() => setVar('calMode', 'formula')}
             activeOpacity={0.7}
           >
-            <Ionicons
-              name="flask"
-              size={16}
-              color={calMode === 'formula' ? colors.blue : colors.text3}
-              style={{ marginBottom: 4 }}
-            />
-            <Text
-              style={[
-                styles.modeBtnText,
-                calMode === 'formula' && styles.modeBtnTextActive,
-              ]}
-            >
+            <Ionicons name="flask" size={22} color={calMode === 'formula' ? colors.blue : colors.text3} />
+            <Text style={[s.optionTitle, calMode === 'formula' && s.optionTitleActive]}>
               {t.formBased[language]}
             </Text>
+            <Text style={s.optionDesc}>{t.formDesc[language]}</Text>
+            {calMode === 'formula' && (
+              <View style={s.checkBadge}>
+                <Ionicons name="checkmark" size={12} color="#fff" />
+              </View>
+            )}
           </TouchableOpacity>
         </View>
       </View>
 
-      {calMode !== 'formula' && (
+      {/* ─── STEP 2: Data Source (only for historical) ─── */}
+      {calMode === 'formula' ? (
+        <View style={s.infoCard}>
+          <Ionicons name="information-circle" size={18} color={colors.blue} />
+          <Text style={s.infoText}>{t.notNeeded[language]}</Text>
+        </View>
+      ) : (
         <>
-          <View style={styles.card}>
-            <View style={styles.cardTitleRow}>
-              <Ionicons name="folder-open-outline" size={16} color={colors.blue} />
-              <Text style={styles.cardTitle}>{t.dataSource[language]}</Text>
-            </View>
+          <View style={[s.card, isFixed && s.dimmed]} pointerEvents={isFixed ? 'none' : 'auto'}>
+            <SectionLabel icon="folder-open-outline" title={t.step2[language]} subtitle={t.step2sub[language]} />
 
-            <View style={styles.tabsWrap}>
+            {/* Source selector — large cards instead of tiny tabs */}
+            <View style={s.optionRow}>
               <TouchableOpacity
-                style={[styles.tab, tab === 'sample' && styles.tabActive]}
-                onPress={() => setTab('sample')}
+                style={[s.sourceCard, mode === 'preset' && s.sourceCardActive]}
+                onPress={() => { setMode('preset'); }}
                 activeOpacity={0.7}
               >
-                <Text
-                  style={[styles.tabText, tab === 'sample' && styles.tabTextActive]}
-                >
-                  {t.sample[language]}
-                </Text>
+                <Ionicons name="cloud-download-outline" size={20} color={mode === 'preset' ? colors.down : colors.text3} />
+                <Text style={[s.sourceTitle, mode === 'preset' && s.sourceTitleActive]}>{t.preset[language]}</Text>
+                <Text style={s.optionDesc}>{t.presetDesc[language]}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.tab, tab === 'manual' && styles.tabActive]}
-                onPress={() => setTab('manual')}
+                style={[s.sourceCard, mode === 'custom' && s.sourceCardActive]}
+                onPress={() => { setMode('custom'); }}
                 activeOpacity={0.7}
               >
-                <Text
-                  style={[styles.tabText, tab === 'manual' && styles.tabTextActive]}
-                >
-                  {t.manual[language]}
-                </Text>
+                <Ionicons name="create-outline" size={20} color={mode === 'custom' ? colors.down : colors.text3} />
+                <Text style={[s.sourceTitle, mode === 'custom' && s.sourceTitleActive]}>{t.custom[language]}</Text>
+                <Text style={s.optionDesc}>{t.customDesc[language]}</Text>
               </TouchableOpacity>
             </View>
 
-            {tab === 'sample' && (
-              <View style={styles.panel}>
-                <Text style={styles.desc}>
-                  {t.sampleDesc[language]}
+            {/* Preset action */}
+            {mode === 'preset' && (
+              <TouchableOpacity
+                style={[s.actionBtn, dataSource === 'sample' && s.actionBtnDone]}
+                onPress={() => setHistory([...SAMPLE_DATA], 'sample')}
+                activeOpacity={0.7}
+              >
+                <Ionicons
+                  name={dataSource === 'sample' ? 'checkmark-circle' : 'download-outline'}
+                  size={18}
+                  color={dataSource === 'sample' ? colors.down : '#fff'}
+                />
+                <Text style={[s.actionBtnText, dataSource === 'sample' && s.actionBtnTextDone]}>
+                  {dataSource === 'sample' ? t.applied[language] : t.preset[language]}
                 </Text>
-                <TouchableOpacity
-                  style={[
-                    styles.loadBtn,
-                    dataSource === 'sample' && styles.loadBtnActive,
-                  ]}
-                  onPress={() => setHistory([...SAMPLE_DATA], 'sample')}
-                  activeOpacity={0.7}
-                >
-                  <Ionicons
-                    name={
-                      dataSource === 'sample'
-                        ? 'checkmark-circle'
-                        : 'cloud-download-outline'
-                    }
-                    size={16}
-                    color={dataSource === 'sample' ? colors.down : colors.text2}
-                    style={{ marginRight: 6 }}
-                  />
-                  <Text
-                    style={[
-                      styles.loadBtnText,
-                      dataSource === 'sample' && styles.loadBtnTextActive,
-                    ]}
-                  >
-                    {dataSource === 'sample'
-                      ? t.sampleActive[language]
-                      : t.loadSample[language]}
-                  </Text>
-                </TouchableOpacity>
-              </View>
+              </TouchableOpacity>
             )}
 
-            {tab === 'manual' && (
-              <View style={styles.panel}>
-                <Text style={styles.desc}>
-                  {t.manualDesc[language]}
-                </Text>
-
-                <View style={styles.manualHeaderRow}>
-                  <View style={styles.manualLabelCol}>
-                    <Text style={styles.manualHeaderText}>{t.week[language]}</Text>
-                  </View>
-                  <View style={styles.manualInputCol}>
-                    <Text style={styles.manualHeaderText}>{t.gas[language]}</Text>
-                  </View>
-                  <View style={styles.manualInputCol}>
-                    <Text style={styles.manualHeaderText}>{t.diesel[language]}</Text>
-                  </View>
-                  <View style={styles.manualInputCol}>
-                    <Text style={styles.manualHeaderText}>{t.crude[language]}</Text>
-                  </View>
-                  <View style={styles.manualDeleteCol} />
+            {/* Custom entry */}
+            {mode === 'custom' && (
+              <View style={s.customPanel}>
+                {/* Table header */}
+                <View style={s.tableHeader}>
+                  <Text style={[s.thCell, { flex: 1.2 }]}>{t.week[language]}</Text>
+                  <Text style={[s.thCell, { flex: 1 }]}>{t.gas[language]}</Text>
+                  <Text style={[s.thCell, { flex: 1 }]}>{t.diesel[language]}</Text>
+                  <Text style={[s.thCell, { flex: 1 }]}>{t.crude[language]}</Text>
+                  <View style={{ width: 32 }} />
                 </View>
-
-                <ScrollView
-                  style={styles.manualScrollWrap}
-                  nestedScrollEnabled
-                  showsVerticalScrollIndicator={false}
-                >
-                  {manualRows.map((row, index) => (
-                    <View key={index} style={styles.manualRow}>
-                      <View style={styles.manualLabelCol}>
+                {/* Rows */}
+                <ScrollView style={s.customScrollWrap} nestedScrollEnabled showsVerticalScrollIndicator>
+                  {manualRows.map((row, i) => (
+                    <View key={i} style={s.inputRow}>
+                      <View style={{ flex: 1.2 }}>
                         <TextInput
-                          style={styles.manualLabelInput}
+                          style={s.inputLabel}
                           value={row.label}
-                          onChangeText={(v) => updateManualRow(index, 'label', v)}
+                          onChangeText={(v) => updateManualRow(i, 'label', v)}
                           placeholder="Label"
                           placeholderTextColor={colors.text3}
                         />
                       </View>
-                      <View style={styles.manualInputCol}>
+                      <View style={{ flex: 1 }}>
                         <TextInput
-                          style={styles.manualInput}
+                          style={s.inputNum}
                           value={row.g}
-                          onChangeText={(v) => updateManualRow(index, 'g', v)}
+                          onChangeText={(v) => updateManualRow(i, 'g', v)}
                           placeholder="0.00"
                           placeholderTextColor={colors.text3}
                           keyboardType="decimal-pad"
                         />
                       </View>
-                      <View style={styles.manualInputCol}>
+                      <View style={{ flex: 1 }}>
                         <TextInput
-                          style={styles.manualInput}
+                          style={s.inputNum}
                           value={row.d}
-                          onChangeText={(v) => updateManualRow(index, 'd', v)}
+                          onChangeText={(v) => updateManualRow(i, 'd', v)}
                           placeholder="0.00"
                           placeholderTextColor={colors.text3}
                           keyboardType="decimal-pad"
                         />
                       </View>
-                      <View style={styles.manualInputCol}>
+                      <View style={{ flex: 1 }}>
                         <TextInput
-                          style={styles.manualInput}
+                          style={s.inputNum}
                           value={row.c}
-                          onChangeText={(v) => updateManualRow(index, 'c', v)}
+                          onChangeText={(v) => updateManualRow(i, 'c', v)}
                           placeholder="0.00"
                           placeholderTextColor={colors.text3}
                           keyboardType="decimal-pad"
                         />
                       </View>
                       <TouchableOpacity
-                        style={styles.manualDeleteCol}
-                        onPress={() => removeManualRow(index)}
+                        style={s.deleteBtn}
+                        onPress={() => removeManualRow(i)}
+                        disabled={manualRows.length <= 3}
                         activeOpacity={0.6}
-                        disabled={manualRows.length <= 1}
                       >
                         <Ionicons
-                          name="close-circle"
-                          size={18}
-                          color={
-                            manualRows.length <= 1
-                              ? colors.border2
-                              : colors.up
-                          }
+                          name="trash-outline"
+                          size={16}
+                          color={manualRows.length <= 3 ? colors.border2 : colors.up}
                         />
                       </TouchableOpacity>
                     </View>
                   ))}
                 </ScrollView>
-
-                <View style={styles.manualActions}>
-                  <TouchableOpacity
-                    style={styles.addRowBtn}
-                    onPress={addManualRow}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons
-                      name="add-circle-outline"
-                      size={16}
-                      color={colors.blue}
-                      style={{ marginRight: 4 }}
-                    />
-                    <Text style={styles.addRowText}>{t.addRow[language]}</Text>
+                {/* Actions */}
+                <View style={s.customActions}>
+                  <TouchableOpacity style={s.addBtn} onPress={addManualRow} activeOpacity={0.7}>
+                    <Text style={s.addBtnText}>{t.addRow[language]}</Text>
                   </TouchableOpacity>
-
                   <TouchableOpacity
-                    style={[
-                      styles.applyBtn,
-                      dataSource === 'manual' && styles.applyBtnActive,
-                    ]}
+                    style={[s.actionBtn, { flex: 2 }, dataSource === 'manual' && s.actionBtnDone]}
                     onPress={applyManualData}
                     activeOpacity={0.7}
                   >
                     <Ionicons
-                      name={
-                        dataSource === 'manual'
-                          ? 'checkmark-circle'
-                          : 'push-outline'
-                      }
+                      name={dataSource === 'manual' ? 'checkmark-circle' : 'push-outline'}
                       size={16}
                       color={dataSource === 'manual' ? colors.down : '#fff'}
-                      style={{ marginRight: 6 }}
                     />
-                    <Text
-                      style={[
-                        styles.applyBtnText,
-                        dataSource === 'manual' && styles.applyBtnTextActive,
-                      ]}
-                    >
-                      {dataSource === 'manual'
-                        ? t.manualActive[language]
-                        : t.applyManual[language]}
+                    <Text style={[s.actionBtnText, dataSource === 'manual' && s.actionBtnTextDone]}>
+                      {dataSource === 'manual' ? t.applied[language] : t.apply[language]}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -390,276 +334,187 @@ export const DataSourceCard = () => {
             )}
           </View>
 
-          <View style={styles.statusBar}>
-            <View style={styles.statusLeft}>
-              <View
-                style={[
-                  styles.statusDot,
-                  {
-                    backgroundColor:
-                      dataSource !== 'none' ? colors.down : colors.text3,
-                  },
-                ]}
-              />
-              <Text style={styles.statusText}>
-                {dataSource !== 'none'
-                  ? `${history.length} data points · ${dataSource}`
-                  : t.noData[language]}
-              </Text>
-            </View>
-            {history.length > 0 && (
-              <TouchableOpacity
-                onPress={() => setHistory([], 'none')}
-                activeOpacity={0.7}
-                style={styles.clearBtnWrap}
-              >
+          {/* ─── Data Preview ─── */}
+          {history.length > 0 && (
+            <View style={s.card}>
+              <SectionLabel icon="eye-outline" title={t.preview[language]} />
+              <View style={s.previewBadgeRow}>
+                <View style={s.previewBadge}>
+                  <Text style={s.previewBadgeText}>{history.length} {t.points[language]}</Text>
+                </View>
+              </View>
+              {/* Table header */}
+              <View style={s.tableHeader}>
+                <Text style={[s.thCell, { flex: 1.3 }]}>{t.week[language]}</Text>
+                <Text style={[s.thCell, { flex: 1 }]}>{t.gas[language]}</Text>
+                <Text style={[s.thCell, { flex: 1 }]}>{t.diesel[language]}</Text>
+                <Text style={[s.thCell, { flex: 1 }]}>{t.crude[language]}</Text>
+              </View>
+              {previewData.map((row, i) => (
+                <PreviewRow key={i} row={row} index={i} isLast={i === previewData.length - 1} />
+              ))}
+              {history.length > 5 && (
+                <TouchableOpacity style={s.showToggle} onPress={() => setShowAllPreview(!showAllPreview)} activeOpacity={0.7}>
+                  <Text style={s.showToggleText}>
+                    {showAllPreview ? t.showLess[language] : `${t.showAll[language]} (${history.length})`}
+                  </Text>
+                  <Ionicons name={showAllPreview ? 'chevron-up' : 'chevron-down'} size={14} color={colors.blue} />
+                </TouchableOpacity>
+              )}
+              {/* Clear */}
+              <TouchableOpacity style={s.clearBtn} onPress={() => setHistory([], 'none')} activeOpacity={0.7}>
                 <Ionicons name="trash-outline" size={14} color={colors.up} />
-                <Text style={styles.clearBtn}>{t.clear[language]}</Text>
+                <Text style={s.clearBtnText}>{t.clear[language]}</Text>
               </TouchableOpacity>
-            )}
-          </View>
+            </View>
+          )}
+
+          {/* No data state */}
+          {history.length === 0 && (
+            <View style={s.emptyState}>
+              <Ionicons name="document-text-outline" size={32} color={colors.text3} />
+              <Text style={s.emptyText}>{t.noData[language]}</Text>
+            </View>
+          )}
         </>
       )}
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 16,
-    gap: 10,
+/* ═══════════════════ STYLES ═══════════════════ */
+const s = StyleSheet.create({
+  container: { gap: 12, paddingHorizontal: 16 },
+
+  /* Locked banner */
+  lockedBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: colors.blueDim, borderWidth: 1, borderColor: colors.blue,
+    borderRadius: 12, padding: 14,
   },
+  lockedText: { color: colors.blue, fontWeight: '600', fontSize: 13, flex: 1 },
+
+  /* Cards */
   card: {
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 16,
-    padding: 16,
+    backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
+    borderRadius: 16, padding: 16,
   },
-  cardTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 14,
+  dimmed: { opacity: 0.5 },
+
+  /* Section labels */
+  sectionLabel: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 14 },
+  sectionTitle: { fontSize: 14, fontWeight: '700', color: colors.text, letterSpacing: 0.1 },
+  sectionSub: { fontSize: 11, color: colors.text2, marginTop: 2 },
+
+  /* Option cards (Step 1 — method picker) */
+  optionRow: { flexDirection: 'row', gap: 10 },
+  optionCard: {
+    flex: 1, padding: 14, backgroundColor: colors.bg, borderWidth: 1.5,
+    borderColor: colors.border, borderRadius: 14, alignItems: 'center', gap: 6,
+    position: 'relative' as const,
   },
-  cardTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: colors.text,
-    letterSpacing: 0.2,
+  optionCardActive: { backgroundColor: colors.blueDim, borderColor: colors.blue },
+  optionTitle: { fontSize: 12, fontWeight: '700', color: colors.text3, textAlign: 'center' },
+  optionTitleActive: { color: colors.blue },
+  optionDesc: { fontSize: 10, color: colors.text2, textAlign: 'center', lineHeight: 14 },
+  checkBadge: {
+    position: 'absolute' as const, top: 8, right: 8,
+    width: 18, height: 18, borderRadius: 9,
+    backgroundColor: colors.blue, alignItems: 'center', justifyContent: 'center',
   },
-  modeSwitch: {
-    flexDirection: 'row',
-    gap: 8,
+
+  /* Source cards (Step 2) */
+  sourceCard: {
+    flex: 1, padding: 14, backgroundColor: colors.bg, borderWidth: 1.5,
+    borderColor: colors.border, borderRadius: 14, alignItems: 'center', gap: 6,
   },
-  modeBtn: {
-    flex: 1,
-    paddingVertical: 14,
-    backgroundColor: colors.bg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+  sourceCardActive: { backgroundColor: colors.downDim, borderColor: colors.down },
+  sourceTitle: { fontSize: 12, fontWeight: '700', color: colors.text3, textAlign: 'center' },
+  sourceTitleActive: { color: colors.down },
+
+  /* Action button */
+  actionBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    backgroundColor: colors.blue, borderRadius: 12, paddingVertical: 14, marginTop: 14,
   },
-  modeBtnActive: {
-    backgroundColor: colors.blueDim,
-    borderColor: colors.blue,
+  actionBtnDone: { backgroundColor: colors.downDim, borderWidth: 1, borderColor: colors.down },
+  actionBtnText: { fontSize: 14, fontWeight: '700', color: '#fff' },
+  actionBtnTextDone: { color: colors.down },
+
+  /* Info card */
+  infoCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: colors.blueDim, borderRadius: 12, padding: 14,
   },
-  modeBtnText: {
-    fontSize: 11,
-    color: colors.text3,
-    fontWeight: '600',
+  infoText: { fontSize: 12, color: colors.text2, flex: 1, lineHeight: 18 },
+
+  /* Custom panel */
+  customPanel: { marginTop: 14 },
+  customScrollWrap: { maxHeight: 360 },
+  tableHeader: {
+    flexDirection: 'row', alignItems: 'center', paddingBottom: 8,
+    borderBottomWidth: 1, borderBottomColor: colors.border, marginBottom: 6,
   },
-  modeBtnTextActive: {
-    color: colors.blue,
+  thCell: {
+    fontSize: 10, fontWeight: '800', color: colors.text3,
+    textTransform: 'uppercase', letterSpacing: 0.5,
   },
-  tabsWrap: {
-    flexDirection: 'row',
-    backgroundColor: colors.card2,
-    borderRadius: 10,
-    padding: 3,
-    marginBottom: 14,
-    gap: 3,
+  inputRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 8,
   },
-  tab: {
-    flex: 1,
-    paddingVertical: 8,
-    alignItems: 'center',
-    borderRadius: 8,
+  inputLabel: {
+    backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border,
+    borderRadius: 8, paddingVertical: 10, paddingHorizontal: 8,
+    fontSize: 12, color: colors.text,
   },
-  tabActive: {
-    backgroundColor: colors.blue,
-  },
-  tabText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.text3,
-  },
-  tabTextActive: {
-    color: '#fff',
-  },
-  panel: {},
-  desc: {
-    fontSize: 12,
-    color: colors.text2,
-    lineHeight: 18,
-    marginBottom: 12,
-  },
-  loadBtn: {
-    flexDirection: 'row',
-    paddingVertical: 13,
-    backgroundColor: colors.card2,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loadBtnActive: {
-    backgroundColor: colors.downDim,
-    borderColor: colors.down,
-  },
-  loadBtnText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.text2,
-  },
-  loadBtnTextActive: {
-    color: colors.down,
-  },
-  manualHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-    paddingHorizontal: 2,
-  },
-  manualHeaderText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: colors.text3,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  manualScrollWrap: {
-    maxHeight: 220,
-  },
-  manualRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-    gap: 4,
-  },
-  manualLabelCol: {
-    flex: 1.2,
-  },
-  manualInputCol: {
-    flex: 1,
-  },
-  manualDeleteCol: {
-    width: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  manualLabelInput: {
-    backgroundColor: colors.bg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    fontSize: 11,
-    color: colors.text,
-  },
-  manualInput: {
-    backgroundColor: colors.bg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 6,
-    fontSize: 12,
-    color: colors.text,
-    textAlign: 'center',
+  inputNum: {
+    backgroundColor: colors.bg, borderWidth: 1, borderColor: colors.border,
+    borderRadius: 8, paddingVertical: 10, paddingHorizontal: 6,
+    fontSize: 13, color: colors.text, textAlign: 'center',
     fontVariant: ['tabular-nums'],
   },
-  manualActions: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 10,
-  },
-  addRowBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    paddingVertical: 11,
+  deleteBtn: { width: 32, alignItems: 'center', justifyContent: 'center' },
+  customActions: { flexDirection: 'row', gap: 8, marginTop: 8 },
+  addBtn: {
+    flex: 1, paddingVertical: 12, borderWidth: 1.5, borderColor: colors.blue,
+    borderStyle: 'dashed', borderRadius: 10, alignItems: 'center', justifyContent: 'center',
     backgroundColor: colors.bg,
-    borderWidth: 1,
-    borderColor: colors.blue,
-    borderStyle: 'dashed',
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  addRowText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.blue,
+  addBtnText: { fontSize: 13, fontWeight: '600', color: colors.blue },
+
+  /* Preview */
+  previewBadgeRow: {
+    flexDirection: 'row', marginBottom: 10, marginTop: -6,
   },
-  applyBtn: {
-    flex: 1.5,
-    flexDirection: 'row',
-    paddingVertical: 11,
-    backgroundColor: colors.blue,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+  previewBadge: {
+    backgroundColor: colors.downDim, paddingHorizontal: 10, paddingVertical: 4,
+    borderRadius: 8, alignSelf: 'flex-start',
   },
-  applyBtnActive: {
-    backgroundColor: colors.downDim,
-    borderWidth: 1,
-    borderColor: colors.down,
+  previewBadgeText: { fontSize: 11, fontWeight: '700', color: colors.down },
+  prevRow: {
+    flexDirection: 'row', paddingVertical: 8,
+    borderBottomWidth: 1, borderBottomColor: colors.border,
   },
-  applyBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#fff',
+  prevCell: { fontSize: 12, color: colors.text, fontVariant: ['tabular-nums'] },
+  showToggle: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 4, paddingTop: 10,
   },
-  applyBtnTextActive: {
-    color: colors.down,
-  },
-  statusBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-  },
-  statusLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  statusDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  statusText: {
-    fontSize: 12,
-    color: colors.text2,
-  },
-  clearBtnWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
+  showToggleText: { fontSize: 12, color: colors.blue, fontWeight: '600' },
+
+  /* Clear */
   clearBtn: {
-    fontSize: 12,
-    color: colors.up,
-    fontWeight: '600',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 6, marginTop: 12, paddingVertical: 10,
+    backgroundColor: colors.upMuted, borderRadius: 10,
   },
+  clearBtnText: { fontSize: 12, color: colors.up, fontWeight: '600' },
+
+  /* Empty state */
+  emptyState: {
+    alignItems: 'center', justifyContent: 'center', paddingVertical: 32, gap: 10,
+    backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border,
+    borderRadius: 16,
+  },
+  emptyText: { fontSize: 13, color: colors.text3 },
 });
