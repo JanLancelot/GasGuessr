@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Dimensions, TouchableOpacity, ScrollView } from 'react-native';
 import { BarChart, LineChart } from 'react-native-gifted-charts';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { colors } from '../theme/colors';
 import { useSimulationStore } from '../store/useSimulationStore';
+import { getForecastLabels } from '../utils/dateUtils';
 
 const CONTAINER_HPAD = 16;
 const CARD_HPAD = 16;
@@ -32,9 +33,14 @@ export const ChartsView = () => {
   const {
     rawResults,
     mean,
+    median,
     p5,
     p95,
+    skewness,
     weeklyMeans,
+    weeklyMedians,
+    weeklyP5,
+    weeklyP95,
   } = simResults;
 
   const renderTabs = () => (
@@ -135,6 +141,11 @@ export const ChartsView = () => {
 
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
+            <Text style={styles.statValue}>₱{median.toFixed(2)}</Text>
+            <Text style={styles.statLabel}>{language === 'en' ? 'Median' : 'Median'}</Text>
+          </View>
+          <View style={[styles.statDivider]} />
+          <View style={styles.statBox}>
             <Text style={styles.statValue}>₱{mean.toFixed(2)}</Text>
             <Text style={styles.statLabel}>{t.meanProj[language]}</Text>
           </View>
@@ -159,18 +170,32 @@ export const ChartsView = () => {
       dataPointRadius: 3,
     }));
 
+    const forecastLabels = getForecastLabels(
+      histLabels.length > 0 ? histLabels[histLabels.length - 1] : 'Apr 24',
+      weeklyMeans.length - 1
+    );
+
     const combinedData = [...histData];
+    const combinedP5: { value: number; label: string }[] = histData.map(d => ({ value: d.value, label: '' }));
+    const combinedP95: { value: number; label: string }[] = histData.map(d => ({ value: d.value, label: '' }));
+    const combinedMedian: { value: number; label: string }[] = histData.map(d => ({ value: d.value, label: '' }));
+
     weeklyMeans.slice(1).forEach((m, idx) => {
       combinedData.push({
         value: m,
-        label: idx === 0 ? t.proj[language] : `W+${idx + 1}`,
+        label: forecastLabels[idx],
         dataPointColor: colors.up,
         dataPointRadius: 4,
       });
+      combinedP5.push({ value: weeklyP5[idx + 1], label: '' });
+      combinedP95.push({ value: weeklyP95[idx + 1], label: '' });
+      combinedMedian.push({ value: weeklyMedians[idx + 1], label: '' });
     });
 
     const spacing = 28;
-    const totalChartContentWidth = spacing * Math.max(1, combinedData.length - 1);
+    const initialSpacing = 10;
+    const endSpacing = 30;
+    const totalChartContentWidth = initialSpacing + (spacing * Math.max(1, combinedData.length - 1)) + endSpacing;
 
     return (
       <View>
@@ -183,11 +208,19 @@ export const ChartsView = () => {
           <View style={styles.chartWrap}>
             <LineChart
               data={combinedData}
+              data2={combinedP95}
+              data3={combinedP5}
               width={totalChartContentWidth}
               height={180}
               color={colors.blue}
+              color2={colors.up + '55'}
+              color3={colors.up + '55'}
               thickness={2}
+              thickness2={1}
+              thickness3={1}
               dataPointsRadius={3}
+              hideDataPoints2
+              hideDataPoints3
               yAxisTextStyle={styles.yAxisText}
               xAxisLabelTextStyle={styles.xAxisTextTrend}
               yAxisLabelWidth={Y_AXIS_WIDTH}
@@ -195,6 +228,8 @@ export const ChartsView = () => {
               yAxisColor={'transparent'}
               xAxisColor={colors.border}
               spacing={spacing}
+              initialSpacing={initialSpacing}
+              endSpacing={endSpacing}
               curved
               curvature={0.15}
               isAnimated

@@ -1,8 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Platform } from 'react-native';
 import Slider from '@react-native-community/slider';
+import * as Haptics from 'expo-haptics';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { colors } from '../theme/colors';
 import { useSimulationStore } from '../store/useSimulationStore';
+
+const triggerHaptic = () => {
+  if (Platform.OS !== 'web') {
+    Haptics.selectionAsync();
+  }
+};
 
 const geoLabels = {
   en: [
@@ -60,6 +68,7 @@ interface ControlRowProps {
   isNumeric?: boolean;
   prefix?: string;
   suffix?: string;
+  disabled?: boolean;
 }
 
 const ControlRow = ({
@@ -75,6 +84,7 @@ const ControlRow = ({
   isNumeric = false,
   prefix = '',
   suffix = '',
+  disabled = false,
 }: ControlRowProps) => {
   const [textVal, setTextVal] = useState(
     Number.isInteger(value) ? value.toString() : value.toFixed(2)
@@ -85,6 +95,7 @@ const ControlRow = ({
   }, [value]);
 
   const handleBlur = () => {
+    if (disabled) return;
     let parsed = parseFloat(textVal);
     if (isNaN(parsed)) {
       setTextVal(Number.isInteger(value) ? value.toString() : value.toFixed(2));
@@ -107,7 +118,7 @@ const ControlRow = ({
   }
 
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, disabled && { opacity: 0.6 }]}>
       <View style={styles.labelRow}>
         <View style={styles.labelLeft}>
           <Text style={styles.labelIcon}>{icon}</Text>
@@ -119,7 +130,7 @@ const ControlRow = ({
             ) : null}
           </View>
         </View>
-        <View style={styles.valBadge}>
+        <View style={[styles.valBadge, disabled && { backgroundColor: 'transparent', borderColor: 'transparent' }]}>
           {isNumeric ? (
             <View style={styles.numericWrap}>
               {prefix ? <Text style={styles.valText}>{prefix}</Text> : null}
@@ -130,6 +141,7 @@ const ControlRow = ({
                 onBlur={handleBlur}
                 keyboardType="decimal-pad"
                 returnKeyType="done"
+                editable={!disabled}
               />
               {suffix ? <Text style={styles.valText}>{suffix}</Text> : null}
             </View>
@@ -138,27 +150,33 @@ const ControlRow = ({
           )}
         </View>
       </View>
-      <View style={styles.sliderTrackBg}>
-        <View style={[styles.sliderTrackFill, { width: `${pct}%` }]} />
-      </View>
-      <Slider
-        style={styles.slider}
-        minimumValue={min}
-        maximumValue={max}
-        step={step}
-        value={value}
-        onValueChange={onValueChange}
-        minimumTrackTintColor="transparent"
-        maximumTrackTintColor="transparent"
-        thumbTintColor={colors.up}
-      />
+      {!disabled && (
+        <View style={styles.sliderTrackBg}>
+          <View style={[styles.sliderTrackFill, { width: `${pct}%` }]} />
+        </View>
+      )}
+      {!disabled && (
+        <Slider
+          style={styles.slider}
+          minimumValue={min}
+          maximumValue={max}
+          step={step}
+          value={value}
+          onValueChange={(v) => { triggerHaptic(); onValueChange(v); }}
+          minimumTrackTintColor="transparent"
+          maximumTrackTintColor="transparent"
+          thumbTintColor={colors.up}
+          disabled={disabled}
+        />
+      )}
     </View>
   );
 };
 
 export const VariableControls = () => {
-  const { crude, fx, demand, geo, opec, projWeeks, iter, setVar, language, setLanguage } =
+  const { crude, fx, demand, geo, opec, projWeeks, iter, setVar, language, interactionMode } =
     useSimulationStore();
+  const isFixed = interactionMode === 'fixed';
 
   return (
     <View style={styles.container}>
@@ -173,6 +191,7 @@ export const VariableControls = () => {
         onValueChange={(v) => setVar('crude', v)}
         isNumeric={true}
         prefix="$"
+        disabled={isFixed}
       />
       <ControlRow
         icon="💱"
@@ -185,6 +204,7 @@ export const VariableControls = () => {
         onValueChange={(v) => setVar('fx', v)}
         isNumeric={true}
         prefix="₱"
+        disabled={isFixed}
       />
       <ControlRow
         icon="📊"
@@ -197,6 +217,7 @@ export const VariableControls = () => {
         onValueChange={(v) => setVar('demand', v)}
         isNumeric={true}
         suffix="×"
+        disabled={isFixed}
       />
       <ControlRow
         icon="🌍"
@@ -208,6 +229,7 @@ export const VariableControls = () => {
         step={1}
         value={geo}
         onValueChange={(v) => setVar('geo', v)}
+        disabled={isFixed}
       />
       <ControlRow
         icon="⚙️"
@@ -219,6 +241,7 @@ export const VariableControls = () => {
         step={1}
         value={opec}
         onValueChange={(v) => setVar('opec', v)}
+        disabled={isFixed}
       />
 
       <View style={styles.divider} />
@@ -228,12 +251,13 @@ export const VariableControls = () => {
         label="Forecast Horizon"
         description={descriptions.horizon[language]}
         min={1}
-        max={6}
+        max={2}
         step={1}
         value={projWeeks}
         onValueChange={(v) => setVar('projWeeks', v)}
         isNumeric={true}
         suffix={` week${projWeeks > 1 ? 's' : ''}`}
+        disabled={isFixed}
       />
       <ControlRow
         icon="🔁"
@@ -245,7 +269,17 @@ export const VariableControls = () => {
         value={iter}
         onValueChange={(v) => setVar('iter', v)}
         isNumeric={true}
+        disabled={isFixed}
       />
+
+      <View style={styles.snapshotNote}>
+        <Ionicons name="time-outline" size={12} color={colors.text3} />
+        <Text style={styles.snapshotNoteText}>
+          {language === 'en'
+            ? "Settings represent the 'Current State' snapshot used as the baseline for the entire projection timeframe."
+            : "Ang mga setting ay kumakatawan sa 'Kasalukuyang Kalagayan' na gagamiting baseline para sa buong forecast."}
+        </Text>
+      </View>
     </View>
   );
 };
@@ -343,5 +377,24 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border,
     marginVertical: 8,
     marginHorizontal: 8,
+  },
+  snapshotNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: colors.card2,
+    borderRadius: 10,
+    marginTop: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  snapshotNoteText: {
+    flex: 1,
+    fontSize: 10,
+    color: colors.text3,
+    lineHeight: 14,
+    fontStyle: 'italic',
   },
 });

@@ -5,9 +5,13 @@ import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, Platform } from 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActionCard } from '../../src/components/ActionCard';
 import { ChartsView } from '../../src/components/ChartsView';
+import { DeltaView } from '../../src/components/DeltaView';
 import { Header } from '../../src/components/Header';
 import { MetricsGrid } from '../../src/components/MetricsGrid';
+import { SimulationHistory } from '../../src/components/SimulationHistory';
 import { SimulationLog } from '../../src/components/SimulationLog';
+import { WeeklyBreakdown } from '../../src/components/WeeklyBreakdown';
+import { TimingAdvisor } from '../../src/components/TimingAdvisor';
 import { useSimulationStore } from '../../src/store/useSimulationStore';
 import { colors } from '../../src/theme/colors';
 
@@ -42,7 +46,6 @@ export default function ForecastScreen() {
       ].join("\n");
 
       if (Platform.OS === 'web') {
-        // --- WEB EXPORT ---
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -85,8 +88,12 @@ export default function ForecastScreen() {
       >
         <Header />
         <MetricsGrid />
+        <TimingAdvisor />
         <ChartsView />
         <ActionCard />
+        <DeltaView />
+        <WeeklyBreakdown />
+        <SimulationHistory />
         <SimulationLog />
 
         {simResults && (

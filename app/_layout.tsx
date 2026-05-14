@@ -1,7 +1,8 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, StyleSheet, View } from 'react-native';
+import { Animated, StyleSheet, View, Platform } from 'react-native';
+import { registerBackgroundSim } from '../src/utils/backgroundTasks';
 
 export default function RootLayout() {
   const [isLoading, setIsLoading] = useState(true);
@@ -13,6 +14,15 @@ export default function RootLayout() {
   const dot1 = useRef(new Animated.Value(0)).current;
   const dot2 = useRef(new Animated.Value(0)).current;
   const dot3 = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    async function setupBackgroundTasks() {
+      if (Platform.OS !== 'web') {
+        await registerBackgroundSim();
+      }
+    }
+    setupBackgroundTasks();
+  }, []);
 
   useEffect(() => {
     

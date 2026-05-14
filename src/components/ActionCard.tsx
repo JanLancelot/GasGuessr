@@ -6,12 +6,14 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Animated,
+  Platform,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { colors } from '../theme/colors';
 import { useSimulationStore } from '../store/useSimulationStore';
 import { runSimulation } from '../engine/simulator';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 export const ActionCard = () => {
   const { running, simResults, prices, fuel, language } = useSimulationStore();
@@ -50,8 +52,14 @@ export const ActionCard = () => {
 
   const handleRun = async () => {
     if (running) return;
+    if (Platform.OS !== 'web') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
     setProgress(0);
     await runSimulation((pct) => setProgress(pct));
+    if (Platform.OS !== 'web') {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
   };
 
   const currentPrice = prices[fuel].current;
@@ -75,8 +83,9 @@ export const ActionCard = () => {
       );
     }
 
-    const { pRise, pFall, mean, p5, p95 } = simResults;
-    const delta = (((mean - currentPrice) / currentPrice) * 100).toFixed(2);
+    const { pRise, pFall, mean, median, p5, p95, skewness } = simResults;
+    const bestEstimate = Math.abs(skewness) > 0.3 ? median : mean;
+    const delta = (((bestEstimate - currentPrice) / currentPrice) * 100).toFixed(2);
 
     if (pRise > 0.6) {
       return (
@@ -93,7 +102,7 @@ export const ActionCard = () => {
                 {(pRise * 100).toFixed(1)}%
               </Text>{' '}
               {t.probIncrease[language]}. {t.mean[language]}:{' '}
-              <Text style={styles.recHighlight}>₱{mean.toFixed(2)}</Text> (
+              <Text style={styles.recHighlight}>₱{bestEstimate.toFixed(2)}</Text> (
               {Number(delta) > 0 ? '+' : ''}
               {delta}%).{'\n'}90% CI: ₱{p5.toFixed(2)}–₱{p95.toFixed(2)}.
             </Text>
@@ -115,7 +124,7 @@ export const ActionCard = () => {
                 {(pFall * 100).toFixed(1)}%
               </Text>{' '}
               {t.probDrop[language]}. {t.mean[language]}:{' '}
-              <Text style={styles.recHighlight}>₱{mean.toFixed(2)}</Text> (
+              <Text style={styles.recHighlight}>₱{bestEstimate.toFixed(2)}</Text> (
               {delta}%).{'\n'}90% CI: ₱{p5.toFixed(2)}–₱{p95.toFixed(2)}.
             </Text>
           </View>
@@ -140,7 +149,7 @@ export const ActionCard = () => {
               <Text style={styles.recHighlight}>
                 {(pFall * 100).toFixed(1)}%
               </Text>
-              .{'\n'}{t.mean[language]}: ₱{mean.toFixed(2)}. CI: ₱{p5.toFixed(2)}–₱{p95.toFixed(2)}.
+              .{'\n'}{t.mean[language]}: ₱{bestEstimate.toFixed(2)}. CI: ₱{p5.toFixed(2)}–₱{p95.toFixed(2)}.
             </Text>
           </View>
         </View>

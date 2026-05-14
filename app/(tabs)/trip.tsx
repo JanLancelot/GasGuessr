@@ -3,14 +3,14 @@ import { ScrollView, StyleSheet, View, Text, TouchableOpacity } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { colors } from '../../src/theme/colors';
-import { DataSourceCard } from '../../src/components/DataSourceCard';
 import { useSimulationStore } from '../../src/store/useSimulationStore';
+import { TripCalculator } from '../../src/components/TripCalculator';
 
-export default function DataScreen() {
+export default function TripScreen() {
   const language = useSimulationStore((s) => s.language);
   const t = {
-    title: { en: 'Data Source', tl: 'Pinagmulan ng Data' },
-    sub: { en: 'Manage reference data & calibration', tl: 'Pamahalaan ang data at kalibrasyon' },
+    title: { en: 'Trip Cost', tl: 'Gastos sa Biyahe' },
+    sub: { en: 'Calculate fuel cost for your trips', tl: 'Kalkulahin ang gastos ng biyahe' },
   };
 
   return (
@@ -19,7 +19,7 @@ export default function DataScreen() {
         <View style={styles.headerRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
             <View style={styles.headerIconWrap}>
-              <Ionicons name="server" size={18} color={colors.blue} />
+              <Ionicons name="map" size={18} color={colors.up} />
             </View>
             <View>
               <Text style={styles.headerTitle}>{t.title[language]}</Text>
@@ -42,7 +42,7 @@ export default function DataScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <DataSourceCard />
+        <TripCalculator />
       </ScrollView>
     </SafeAreaView>
   );
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: colors.blueDim,
+    backgroundColor: colors.upDim,
     alignItems: 'center',
     justifyContent: 'center',
   },

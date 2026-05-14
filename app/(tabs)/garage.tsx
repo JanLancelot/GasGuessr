@@ -3,14 +3,16 @@ import { ScrollView, StyleSheet, View, Text, TouchableOpacity } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { colors } from '../../src/theme/colors';
-import { DataSourceCard } from '../../src/components/DataSourceCard';
 import { useSimulationStore } from '../../src/store/useSimulationStore';
+import { VehicleManager } from '../../src/components/VehicleManager';
+import { FillUpTracker } from '../../src/components/FillUpTracker';
+import { BudgetEstimator } from '../../src/components/BudgetEstimator';
 
-export default function DataScreen() {
+export default function GarageScreen() {
   const language = useSimulationStore((s) => s.language);
   const t = {
-    title: { en: 'Data Source', tl: 'Pinagmulan ng Data' },
-    sub: { en: 'Manage reference data & calibration', tl: 'Pamahalaan ang data at kalibrasyon' },
+    title: { en: 'My Garage', tl: 'Aking Garahe' },
+    sub: { en: 'Manage vehicles and track fill-ups', tl: 'Pamahalaan ang mga sasakyan at tala' },
   };
 
   return (
@@ -19,7 +21,7 @@ export default function DataScreen() {
         <View style={styles.headerRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
             <View style={styles.headerIconWrap}>
-              <Ionicons name="server" size={18} color={colors.blue} />
+              <Ionicons name="car" size={18} color={colors.blue} />
             </View>
             <View>
               <Text style={styles.headerTitle}>{t.title[language]}</Text>
@@ -42,7 +44,9 @@ export default function DataScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <DataSourceCard />
+        <VehicleManager />
+        <BudgetEstimator />
+        <FillUpTracker />
       </ScrollView>
     </SafeAreaView>
   );

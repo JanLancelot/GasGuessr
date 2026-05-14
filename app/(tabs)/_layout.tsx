@@ -1,4 +1,4 @@
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Tabs } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -17,14 +17,12 @@ export default function TabLayout() {
   useEffect(() => {
     const checkOnboarding = async () => {
       if (Platform.OS === 'web') {
-        // Use localStorage on web
         const done = localStorage.getItem(ONBOARDING_KEY);
-        if (!done) setShowTutorial(true);
+        if (done) setShowTutorial(false);
         setChecked(true);
       } else {
-        // Use AsyncStorage on mobile
         const done = await AsyncStorage.getItem(ONBOARDING_KEY);
-        if (!done) setShowTutorial(true);
+        if (done) setShowTutorial(false);
         setChecked(true);
       }
     };
@@ -40,7 +38,6 @@ export default function TabLayout() {
     setShowTutorial(false);
   };
 
-  // Prevent flicker while checking storage
   if (!checked) return null;
 
   if (showTutorial) {
@@ -99,6 +96,24 @@ export default function TabLayout() {
           title: language === 'en' ? 'Data' : 'Data',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'server' : 'server-outline'} size={22} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="garage"
+        options={{
+          title: language === 'en' ? 'Garage' : 'Garahe',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'car' : 'car-outline'} size={22} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="trip"
+        options={{
+          title: language === 'en' ? 'Trip' : 'Biyahe',
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons name={focused ? 'map' : 'map-outline'} size={22} color={color} />
           ),
         }}
       />
